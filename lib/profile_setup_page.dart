@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'components.dart';
-import 'profile_page.dart'; // Tujuan setelah setup selesai
+import 'main_nav.dart'; // <--- PENTING: Tujuan navigasi ke MainNav (Home)
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -10,7 +10,7 @@ class ProfileSetupPage extends StatefulWidget {
 }
 
 class _ProfileSetupPageState extends State<ProfileSetupPage> {
-  // Controller
+  // Controller untuk input data
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -20,7 +20,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final TextEditingController _skillsController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
 
-  // Data Opsi (Sesuai Gambar)
+  // Data Opsi
   final List<String> _serviceOptions = [
     "Asisten Rumah Tangga",
     "Pertukangan & Konstruksi",
@@ -141,14 +141,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 CustomTextField(hintText: "Ramah, Disiplin, Berpengalaman", controller: _skillsController),
                 const SizedBox(height: 25),
 
-                // Upload Sampul (Dashed Border style visual)
+                // Upload Sampul
                 Container(
                   height: 100,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.indigo.shade100), 
+                    border: Border.all(color: Colors.indigo.shade100),
                   ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -202,11 +202,11 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Selesai Setup -> Masuk ke Aplikasi Utama (Profile)
+                      // SELESAI SETUP -> MASUK KE MAIN NAV (HOME)
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const ProfilePage()),
-                        (route) => false, // Hapus history login/signup agar tidak bisa back
+                        MaterialPageRoute(builder: (context) => const MainNav()),
+                        (route) => false, 
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -226,15 +226,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     );
   }
 
-  // --- MODAL BOTTOM SHEET (Reusable Logic) ---
+  // --- MODAL BOTTOM SHEET ---
   void _showSelectionModal(BuildContext context, String title, List<String> options, TextEditingController controller) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Agar bisa full height jika konten banyak
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.6, // Set tinggi modal
+          height: MediaQuery.of(context).size.height * 0.6,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
@@ -244,11 +244,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           ),
           child: Column(
             children: [
-              // Handle Bar Kecil
               const SizedBox(height: 10),
               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(10))),
               
-              // Header Modal
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
@@ -256,14 +254,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   children: [
                     IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.grey)),
                     Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 40), // Spacer dummy agar text center
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
 
               const Divider(height: 1),
 
-              // List Opsi
               Expanded(
                 child: StatefulBuilder(
                   builder: (context, setState) {
@@ -288,7 +285,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 ),
               ),
 
-              // Tombol Konfirmasi di Modal
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: SizedBox(

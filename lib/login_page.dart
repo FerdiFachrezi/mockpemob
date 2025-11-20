@@ -1,9 +1,7 @@
-// File: lib/login_page.dart
-
 import 'package:flutter/material.dart';
-import 'components.dart';   
-import 'signup_page.dart';  
-import 'profile_page.dart'; // <--- IMPORT BARU (Pastikan ini ada)
+import 'components.dart';   // Widget & Warna Custom
+import 'signup_page.dart';  // Halaman Daftar
+import 'main_nav.dart';     // <--- TUJUAN BARU (Halaman Utama dengan Navigasi Bawah)
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +12,10 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
+
+  // Controller (Opsional, disiapkan jika nanti butuh ambil data input)
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Header Judul
                 const Center(
                   child: Text(
                     "Selamat Datang Kembali!",
@@ -39,17 +42,21 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
                 
+                // Input Email
                 const InputLabel(label: "Email"),
-                const CustomTextField(
+                CustomTextField(
                   hintText: "lalajola123@gmail.com",
+                  controller: _emailController,
                 ),
                 const SizedBox(height: 20),
 
+                // Input Sandi
                 const InputLabel(label: "Sandi"),
                 CustomTextField(
                   hintText: "••••••••••••",
                   isPassword: true,
                   isVisible: _isPasswordVisible,
+                  controller: _passwordController,
                   onVisibilityToggle: () {
                     setState(() {
                       _isPasswordVisible = !_isPasswordVisible;
@@ -58,26 +65,26 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // --- UPDATE DI SINI ---
+                // Tombol Masuk
                 PrimaryButton(
                   text: "MASUK",
                   onPressed: () {
-                    // Navigasi sementara ke ProfilePage
-                    // Menggunakan pushReplacement agar user tidak bisa kembali ke Login dengan tombol Back
+                    // Navigasi ke Halaman Utama (Home)
+                    // Menggunakan pushReplacement agar user tidak bisa menekan tombol 'Back' kembali ke Login
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const ProfilePage()),
+                      MaterialPageRoute(builder: (context) => const MainNav()),
                     );
                   },
                 ),
-                // ---------------------
-                
                 const SizedBox(height: 15),
 
+                // Tombol Google
                 GoogleButton(onPressed: () {}),
 
                 const SizedBox(height: 20),
                 
+                // Footer Text (Link ke Daftar)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
