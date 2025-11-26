@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'components.dart';
 import 'home_page.dart';
 import 'profile_page.dart';
+import 'orders_page.dart'; // <--- IMPORT HALAMAN BARU
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -13,12 +14,11 @@ class MainNav extends StatefulWidget {
 class _MainNavState extends State<MainNav> {
   int _selectedIndex = 0;
 
-  // Daftar halaman yang akan ditampilkan
   final List<Widget> _pages = [
-    const HomePage(),                       // Index 0: Beranda
-    const Center(child: Text("Pencarian")), // Index 1: Placeholder
-    const Center(child: Text("Pesanan")),   // Index 2: Placeholder
-    const ProfilePage(),                    // Index 3: Profil
+    const HomePage(),
+    const Center(child: Text("Pencarian")),
+    const OrdersPage(), // <--- GANTI PLACEHOLDER DENGAN HALAMAN PESANAN
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -30,15 +30,15 @@ class _MainNavState extends State<MainNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex], // Menampilkan halaman sesuai index
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Agar semua icon muncul labelnya
+        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        selectedItemColor: kPrimaryColor, // Warna icon aktif (Biru Tua)
-        unselectedItemColor: Colors.grey, // Warna icon tidak aktif
+        selectedItemColor: kPrimaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        showUnselectedLabels: false, // Sesuai desain, label non-aktif biasanya hidden atau kecil
-        showSelectedLabels: false,   // Di gambar tidak ada label teks, hanya icon
+        showUnselectedLabels: false,
+        showSelectedLabels: false,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined, size: 28),
@@ -49,8 +49,10 @@ class _MainNavState extends State<MainNav> {
             icon: Icon(Icons.search, size: 28),
             label: 'Search',
           ),
+          // Ikon Pesanan (Dokumen/List)
           BottomNavigationBarItem(
-            icon: Icon(Icons.text_snippet_outlined, size: 28),
+            icon: Icon(Icons.description_outlined, size: 28), // Menggunakan icon dokumen
+            activeIcon: Icon(Icons.description, size: 28),
             label: 'Orders',
           ),
           BottomNavigationBarItem(
