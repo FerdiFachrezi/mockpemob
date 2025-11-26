@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'components.dart';   // Widget & Warna Custom
-import 'signup_page.dart';  // Halaman Daftar
-import 'main_nav.dart';     // <--- TUJUAN BARU (Halaman Utama dengan Navigasi Bawah)
+import 'components.dart';
+import 'signup_page.dart';
+import 'main_nav.dart';
+import 'main.dart'; // PENTING: Import main.dart untuk akses MyApp.isClient
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,10 +13,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
-
-  // Controller (Opsional, disiapkan jika nanti butuh ambil data input)
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -28,49 +25,69 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Header Judul
                 const Center(
                   child: Text(
                     "Selamat Datang Kembali!",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: kTextColor,
-                    ),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: kTextColor),
                   ),
                 ),
                 const SizedBox(height: 40),
                 
-                // Input Email
                 const InputLabel(label: "Email"),
-                CustomTextField(
-                  hintText: "lalajola123@gmail.com",
-                  controller: _emailController,
-                ),
+                const CustomTextField(hintText: "user@gmail.com"),
                 const SizedBox(height: 20),
 
-                // Input Sandi
                 const InputLabel(label: "Sandi"),
                 CustomTextField(
                   hintText: "••••••••••••",
                   isPassword: true,
                   isVisible: _isPasswordVisible,
-                  controller: _passwordController,
                   onVisibilityToggle: () {
                     setState(() {
                       _isPasswordVisible = !_isPasswordVisible;
                     });
                   },
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
-                // Tombol Masuk
+                // --- TAMBAHAN SWITCH MOCK ROLE ---
+                // Switch ini hanya untuk simulasi development
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: kPrimaryColor.withOpacity(0.3))
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Masuk sebagai: ${MyApp.isClient ? 'KLIEN' : 'PEKERJA'}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: MyApp.isClient ? Colors.orange : kPrimaryColor
+                        ),
+                      ),
+                      Switch(
+                        value: MyApp.isClient,
+                        activeColor: Colors.orange,
+                        onChanged: (value) {
+                          setState(() {
+                            MyApp.isClient = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // ------------------------------------
+
                 PrimaryButton(
                   text: "MASUK",
                   onPressed: () {
-                    // Navigasi ke Halaman Utama (Home)
-                    // Menggunakan pushReplacement agar user tidak bisa menekan tombol 'Back' kembali ke Login
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const MainNav()),
@@ -79,12 +96,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 15),
 
-                // Tombol Google
                 GoogleButton(onPressed: () {}),
 
                 const SizedBox(height: 20),
                 
-                // Footer Text (Link ke Daftar)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -96,13 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                           MaterialPageRoute(builder: (context) => const SignUpPage()),
                         );
                       },
-                      child: const Text(
-                        "Daftar",
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: const Text("Daftar", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
