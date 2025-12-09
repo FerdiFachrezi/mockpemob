@@ -1,224 +1,356 @@
 import 'package:flutter/material.dart';
 import 'components.dart';
-import 'edit_profile_page.dart';
-import 'reviews_page.dart';
 import 'login_page.dart';
-import 'main.dart'; // Import untuk akses MyApp.isClient
+import 'reviews_page.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Data Mock berbeda tergantung role
-    final String roleText = MyApp.isClient ? "Klien" : "Pekerja";
-    final String nameText = MyApp.isClient ? "Lapo Kerja" : "Lala Jola";
-    final String emailText = MyApp.isClient ? "lapokerja123@gmail.com" : "lalajola123@gmail.com";
-    final String locationText = MyApp.isClient ? "Jalan Dr. T. Mansur No.9" : "Medan Tembung";
+    // Mengambil lebar layar untuk membuat lengkungan yang responsif
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF8F9FA), // Background abu muda
       body: SingleChildScrollView(
+        // Menghilangkan efek overscroll glow default agar tampilan header lebih bersih
+        physics: const ClampingScrollPhysics(), 
         child: Column(
           children: [
-            // --- HEADER ---
-            Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: kPrimaryColor,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
-                  ),
+            // --- HEADER BARU (Semua di dalam Biru) ---
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 60, bottom: 40), // Spasi atas & bawah
+              decoration: BoxDecoration(
+                color: kPrimaryColor, // Warna Biru Tua
+                borderRadius: BorderRadius.vertical(
+                  // Membuat lengkungan di bawah header
+                  bottom: Radius.elliptical(screenWidth, 60),
                 ),
-                Positioned(
-                  top: 40,
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          // Ganti gambar jika Klien (opsional)
-                          backgroundImage: AssetImage(MyApp.isClient ? 'assets/images/avatar_placeholder.png' : 'assets/images/avatar_placeholder.png'),
-                          backgroundColor: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        nameText,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      Text(
-                        roleText,
-                        style: const TextStyle(fontSize: 16, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-
-            // --- KARTU INFORMASI UTAMA ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Profil", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfilePage()));
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(color: kPrimaryColor, borderRadius: BorderRadius.circular(20)),
-                            child: const Row(
-                              children: [
-                                Text("Edit Profil", style: TextStyle(color: Colors.white, fontSize: 12)),
-                                SizedBox(width: 4),
-                                Icon(Icons.edit, color: Colors.white, size: 12),
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Informasi Dasar (Tampil untuk Klien & Pekerja)
-                    _buildProfileItem("Nama Lengkap", nameText),
-                    _buildProfileItem("Email", emailText),
-                    _buildProfileItem("Lokasi", locationText),
-
-                    // --- BAGIAN KHUSUS PEKERJA (Disembunyikan jika Klien) ---
-                    if (!MyApp.isClient) ...[
-                      _buildProfileItem("Layanan", "Asisten Rumah Tangga"),
-                      _buildProfileItem("Spesialis", "Pengasuh Anak, Perawat lansia"),
-                      _buildProfileItem("Tarif", "Profesional"),
-                      
-                      const Text("Keahlian", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          _buildTag("Ramah"),
-                          _buildTag("Disiplin"),
-                          _buildTag("Berpengalaman"),
-                        ],
-                      ),
-                    ],
-                    // ---------------------------------------------------------
-                  ],
-                ),
+                boxShadow: [
+                   BoxShadow(
+                     color: kPrimaryColor.withOpacity(0.3),
+                     blurRadius: 20,
+                     offset: const Offset(0, 10),
+                   )
+                ],
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- TOMBOL NAVIGASI BAWAH ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildMenuButton(
-                    icon: Icons.vpn_key_outlined,
-                    text: "Ganti Password",
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  // Tombol Ulasan (Hanya untuk Pekerja yang menerima ulasan)
-                  if (!MyApp.isClient) ...[
-                     _buildMenuButton(
-                      icon: Icons.star_outline,
-                      text: "Ulasan",
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ReviewsPage()));
-                      },
+                  // 1. Judul Halaman (Opsional)
+                  const Text(
+                    "Profil Saya",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 15),
-                  ],
+                  ),
+                  const SizedBox(height: 30),
 
-                  _buildMenuButton(
-                    icon: Icons.logout,
-                    text: "Keluar",
-                    textColor: Colors.red,
-                    iconColor: Colors.red,
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
-                        (route) => false,
-                      );
-                    },
+                  // 2. Avatar Foto (Di dalam area biru)
+                  Container(
+                    padding: const EdgeInsets.all(4), // Border putih tipis
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2), // Transparan putih
+                      shape: BoxShape.circle,
+                    ),
+                    child: const CircleAvatar(
+                      radius: 55, // Ukuran avatar
+                      backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+
+                  // 3. Nama & Role (Teks Putih)
+                  const Text(
+                    "Lala Jola",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white, // Warna Putih
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Pekerja",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8), // Putih agak transparan
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+
+            const SizedBox(height: 25), // Jarak antara header biru dan konten putih
+
+            // --- KONTEN MENU (Area Putih) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  // Header "Informasi Pribadi" & Tombol Edit
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Informasi Pribadi", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfilePage()));
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(color: kPrimaryColor, borderRadius: BorderRadius.circular(20)),
+                          child: const Row(
+                            children: [
+                              Text("Edit Profil", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              SizedBox(width: 6),
+                              Icon(Icons.edit, color: Colors.white, size: 12)
+                            ],
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Kartu Detail Profil
+                  _buildDetailCard(children: [
+                    _buildProfileItem("Nama Lengkap", "Lala Jola"),
+                    _buildProfileItem("Email", "lalajola123@gmail.com"),
+                    _buildProfileItem("Lokasi", "Medan Tembung"),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10.0),
+                      child: Divider(),
+                    ),
+                    _buildProfileItem("Layanan", "Asisten Rumah Tangga"),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Spesialis", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+                          const SizedBox(height: 4),
+                          const Text("Pengasuh Anak, Perawat lansia", style: TextStyle(fontSize: 14, color: Colors.black87)),
+                        ],
+                      ),
+                    ),
+                    _buildProfileItem("Tarif", "Profesional"),
+                    
+                    const SizedBox(height: 10),
+                    const Text("Keahlian", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildChip("Ramah"),
+                        _buildChip("Disiplin"),
+                        _buildChip("Berpengalaman"),
+                      ],
+                    )
+                  ]),
+
+                  const SizedBox(height: 25),
+
+                  // Tombol Ganti Password
+                  GestureDetector(
+                    onTap: () => _showChangePasswordModal(context),
+                    child: _buildMenuButton(Icons.vpn_key_outlined, "Ganti Password"),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Tombol Ulasan
+                  GestureDetector(
+                    onTap: () {
+                       Navigator.push(context, MaterialPageRoute(builder: (context) => const ReviewsPage()));
+                    },
+                    child: _buildMenuButton(Icons.star_outline, "Ulasan"),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Tombol Keluar
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context, 
+                          MaterialPageRoute(builder: (context) => const LoginPage()), 
+                          (route) => false
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.red.withOpacity(0.08),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+                      ),
+                      child: const Text("Keluar Akun", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileItem(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+  // --- WIDGET HELPERS ---
+
+  Widget _buildDetailCard({required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.06), blurRadius: 15, offset: const Offset(0, 5))],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildMenuButton(IconData icon, String title) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+      ),
+      child: Row(
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: kPrimaryColor, size: 22),
+          ),
+          const SizedBox(width: 15),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Spacer(),
+          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
         ],
       ),
     );
   }
 
-  Widget _buildTag(String text) {
-    return Chip(
-      label: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
-      backgroundColor: kPrimaryColor,
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
+  Widget _buildProfileItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 
-  Widget _buildMenuButton({required IconData icon, required String text, required VoidCallback onTap, Color? textColor, Color? iconColor}) {
+  Widget _buildChip(String label) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 2))],
+        color: kPrimaryColor,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: ListTile(
-        leading: Icon(icon, color: iconColor ?? kPrimaryColor),
-        title: Text(text, style: TextStyle(fontWeight: FontWeight.bold, color: textColor ?? Colors.black)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: onTap,
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  // --- MODAL GANTI PASSWORD (Sama seperti sebelumnya) ---
+  void _showChangePasswordModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20, right: 20, top: 15,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              const Text("Ganti Password", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              const Text("Masukkan Password Lama dan Password Baru Anda.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 25),
+              _buildPasswordField("Password Lama"),
+              const SizedBox(height: 15),
+              _buildPasswordField("Password Baru"),
+              const SizedBox(height: 15),
+              _buildPasswordField("Konfirmasi Password Baru"),
+              const SizedBox(height: 30),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context), 
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15), 
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), 
+                      side: const BorderSide(color: kPrimaryColor)
+                    ), 
+                    child: const Text("Batal", style: TextStyle(color: kPrimaryColor))
+                  )
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () { 
+                      Navigator.pop(context); 
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password berhasil diubah!"))); 
+                    }, 
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor, 
+                      padding: const EdgeInsets.symmetric(vertical: 15), 
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+                    ), 
+                    child: const Text("Konfirmasi", style: TextStyle(color: Colors.white, fontSize: 14))
+                  )
+                ),
+              ]),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPasswordField(String hint) {
+    return TextField(
+      obscureText: true,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.grey)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey.shade400)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: kPrimaryColor)),
       ),
     );
   }

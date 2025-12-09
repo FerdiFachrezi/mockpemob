@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'splash_screen.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -8,23 +8,23 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // --- TAMBAHAN VARIABEL MOCK ---
-  // Ubah jadi 'true' untuk simulasi sebagai Klien, 'false' sebagai Pekerja.
-  // Kita akan mengubahnya lewat Login Page nanti.
+  // --- GLOBAL VARIABLE UNTUK PERAN ---
+  // false = Pekerja, true = Klien (Default false, nanti diubah di WelcomePage)
   static bool isClient = false; 
-  // ------------------------------
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Login UI',
+      debugShowCheckedModeBanner: false, // Menghilangkan banner DEBUG
+      title: 'LapoKerja',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        primarySwatch: Colors.indigo, 
         scaffoldBackgroundColor: Colors.white,
-        fontFamily: 'Sans-serif',
+        fontFamily: 'Sans-serif', 
+        useMaterial3: false, 
       ),
-      home: const LoginPage(),
+      // Titik awal aplikasi adalah Splash Screen
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'components.dart'; // Mengambil kPrimaryColor dari sini
+import 'components.dart';
 import 'order_detail_page.dart';
 import 'main.dart'; 
+import 'main_nav.dart'; // Import MainNav
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -20,45 +21,65 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    String title = MyApp.isClient ? "Riwayat Pesanan" : "Daftar Pekerjaan Masuk";
+
     return Scaffold(
-      backgroundColor: kPrimaryColor, // Ganti background scaffold agar senada saat bounce scroll
+      backgroundColor: kPrimaryColor,
       body: Column(
         children: [
           // --- HEADER ---
           Container(
-            color: kPrimaryColor, // <--- UBAH DISINI (Sebelumnya 0xFF333333)
+            color: kPrimaryColor,
             padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
             width: double.infinity,
             child: Row(
               children: [
-                // Tombol Back (Opsional)
-                // Jika ingin disembunyikan karena ini halaman utama nav, bungkus dengan Visibility(visible: false, ...)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Colors.black),
+                // [PERBAIKAN] Tombol Back yang Pasti Berfungsi
+                GestureDetector(
+                  // Membuat area sentuh lebih responsif
+                  behavior: HitTestBehavior.opaque, 
+                  onTap: () {
+                    // Logika: Hapus semua tumpukan halaman dan mulai ulang dari MainNav (Home)
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MainNav()),
+                      (route) => false,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10), // Padding sedikit diperbesar agar mudah diklik
+                    decoration: const BoxDecoration(
+                      color: Colors.white, 
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+                      ]
+                    ),
+                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
+                  ),
                 ),
+                
                 Expanded(
                   child: Center(
                     child: Text(
-                      MyApp.isClient ? "Riwayat Pesanan" : "Daftar Pekerjaan",
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      title, 
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontSize: 18, 
+                        fontWeight: FontWeight.bold
+                      )
                     ),
                   ),
                 ),
-                const SizedBox(width: 30), // Dummy spacer penyeimbang
+                
+                // Penyeimbang layout agar judul tetap di tengah
+                const SizedBox(width: 40), 
               ],
             ),
           ),
           
-          // --- TAB BAR & LIST ---
+          // --- KONTEN HALAMAN (Sama seperti sebelumnya) ---
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -68,17 +89,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // Judul Sub
-                  const Text("Lihat semua pesanan yang telah kamu buat.", style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 20),
-                  
                   // Tab Bar
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.grey.shade300)
+                      border: Border.all(color: Colors.grey.shade200)
                     ),
                     child: TabBar(
                       controller: _tabController,
@@ -94,166 +111,129 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       dividerColor: Colors.transparent,
                       tabs: const [
                         Tab(text: "Semua"),
-                        Tab(text: "Diproses"),
+                        Tab(text: "Baru"),
+                        Tab(text: "Aktif"),
                         Tab(text: "Selesai"),
-                        Tab(text: "Dibatalkan"),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
-                  // Isi Tab (List Pesanan)
+                  // Tab Views
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildOrderList(), 
-                        _buildOrderList(filter: "Diproses"), 
-                        _buildOrderList(filter: "Selesai"), 
-                        _buildOrderList(filter: "Dibatalkan"), 
+                        _buildList("Semua"),
+                        _buildList("Baru"),
+                        _buildList("Aktif"),
+                        _buildList("Selesai"),
                       ],
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildOrderList({String? filter}) {
-    // Mock Data
-    List<Map<String, dynamic>> orders = [
-      {
-        "name": "Lala Jola",
-        "role": "Asisten Rumah Tangga",
-        "service": "Pengasuh Anak",
-        "date": "6 Okt 2025",
-        "status": "Selesai"
-      },
-      {
-        "name": "Putri Wulandari",
-        "role": "Asisten Rumah Tangga",
-        "service": "Perawat Lansia",
-        "date": "8 Okt 2025",
-        "status": "Diproses"
-      },
-      {
-        "name": "Muhammad Rizki",
-        "role": "Asisten Rumah Tangga",
-        "service": "Ahli Beres Rumah",
-        "date": "10 Okt 2025",
-        "status": "Dibatalkan"
-      },
+  // --- WIDGET HELPER (TIDAK ADA PERUBAHAN) ---
+  Widget _buildList(String tabName) {
+    bool isClient = MyApp.isClient;
+    
+    // MOCK DATA
+    final List<Map<String, dynamic>> allOrders = [
+      {"name": isClient ? "Ibu Siti" : "Lala Jola", "role": "Asisten Rumah Tangga", "detail": "Membersihkan rumah 2 lantai, cuci piring.", "status": "Menunggu", "date": "12 Okt 2025"},
+      {"name": isClient ? "Budi Santoso" : "Pak Ahmad", "role": "Pertukangan", "detail": "Memperbaiki atap bocor di garasi.", "status": "Menunggu", "date": "13 Okt 2025"},
+      {"name": isClient ? "Samosir Helpet" : "Ibu Rina", "role": "Pengasuh Lansia", "detail": "Menjaga nenek usia 80 tahun.", "status": "Diproses", "date": "10 Okt 2025"},
+      {"name": isClient ? "Ratna Juwita" : "Kak Sari", "role": "Pengasuh Anak", "detail": "Menjaga balita seharian.", "status": "Selesai", "date": "6 Okt 2025"},
+      {"name": isClient ? "Muhammad Rizki" : "Pak Joko", "role": "Ahli Beres Rumah", "detail": "Pindahan rumah.", "status": "Dibatalkan", "date": "1 Okt 2025"},
     ];
 
-    if (filter != null) {
-      orders = orders.where((o) => o['status'] == filter).toList();
+    List<Map<String, dynamic>> filteredOrders = [];
+    if (tabName == "Semua") filteredOrders = allOrders;
+    else if (tabName == "Baru") filteredOrders = allOrders.where((o) => o['status'] == "Menunggu").toList();
+    else if (tabName == "Aktif") filteredOrders = allOrders.where((o) => o['status'] == "Diproses").toList();
+    else if (tabName == "Selesai") filteredOrders = allOrders.where((o) => o['status'] == "Selesai" || o['status'] == "Dibatalkan").toList();
+
+    if (filteredOrders.isEmpty) {
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.folder_open, size: 50, color: Colors.grey[300]), const SizedBox(height: 10), const Text("Belum ada pesanan di sini", style: TextStyle(color: Colors.grey))]));
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: orders.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 15),
+      itemCount: filteredOrders.length,
       itemBuilder: (context, index) {
-        final item = orders[index];
-        return _buildOrderCard(item);
+        return _buildOrderCard(filteredOrders[index], isClient);
       },
     );
   }
 
-  Widget _buildOrderCard(Map<String, dynamic> item) {
+  Widget _buildOrderCard(Map<String, dynamic> item, bool isClient) {
     Color statusColor;
-    IconData statusIcon;
+    Color badgeBgColor;
+    String statusText = item['status'];
 
-    switch (item['status']) {
-      case "Selesai":
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case "Diproses":
-        statusColor = Colors.orange;
-        statusIcon = Icons.access_time_filled;
-        break;
-      case "Dibatalkan":
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusIcon = Icons.help;
+    switch (statusText) {
+      case "Menunggu": statusColor = Colors.orange; badgeBgColor = Colors.orange.shade50; break;
+      case "Diproses": statusColor = Colors.orange; badgeBgColor = Colors.orange.shade50; break;
+      case "Selesai": statusColor = Colors.green; badgeBgColor = Colors.green.shade50; break;
+      case "Dibatalkan": statusColor = Colors.red; badgeBgColor = Colors.red.shade50; break;
+      default: statusColor = Colors.grey; badgeBgColor = Colors.grey.shade100;
     }
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 3))],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5)]),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
-              ),
+              const CircleAvatar(radius: 22, backgroundImage: AssetImage('assets/images/avatar_placeholder.png')),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(isClient ? "Pekerja: ${item['name']}" : "Klien: ${item['name']}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     Text(item['role'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
-              Row(
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: badgeBgColor, borderRadius: BorderRadius.circular(12)), child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)))
+            ],
+          ),
+          const SizedBox(height: 15),
+          const Divider(thickness: 1, height: 1),
+          const SizedBox(height: 15),
+          Text("Detail Pekerjaan:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey[800])),
+          const SizedBox(height: 4),
+          Text(item['detail'], style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          const SizedBox(height: 15),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (context) => OrderDetailPage(status: statusText)));
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(statusIcon, color: statusColor, size: 16),
-                  const SizedBox(width: 4),
-                  Text(item['status'], style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text("Lihat Detail", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_ios, size: 12, color: kPrimaryColor)
                 ],
-              )
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildInfoCol("Tipe Layanan", item['service']),
-              _buildInfoCol("Paket Layanan", "Harian"),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildInfoCol("Tanggal Pemesanan", item['date']),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => OrderDetailPage(status: item['status'])));
-                },
-                child: const Text("Lihat Detail >", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold)),
-              )
-            ],
-          ),
+              ),
+            ),
+          )
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoCol(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-      ],
     );
   }
 }

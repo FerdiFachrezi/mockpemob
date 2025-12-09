@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'components.dart';
 import 'category_page.dart';
+import 'search_page.dart'; 
+import 'profile_page.dart'; // Kita pakai ProfilePage sebagai Detail Pekerja
 
 class HomePageClient extends StatelessWidget {
   const HomePageClient({super.key});
@@ -10,11 +12,11 @@ class HomePageClient extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(), // Scroll lebih natural
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER (BIRU TUA) ---
+            // HEADER
             Container(
               padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 30),
               width: double.infinity,
@@ -22,70 +24,57 @@ class HomePageClient extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Halo",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
-                  const Text("Lapo Kerja.",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold)),
+                  const Text("Halo", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text("Lapo Kerja.", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
-                  // Search Bar
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.black54),
-                        SizedBox(width: 10),
-                        Text("Cari Pekerja", style: TextStyle(color: Colors.grey)),
-                      ],
+                  // Search Bar Action
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage())),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      height: 50,
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.search, color: Colors.black54),
+                          SizedBox(width: 10),
+                          Text("Cari Pekerja...", style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
                     ),
                   )
                 ],
               ),
             ),
 
-            // --- KATEGORI LAYANAN ---
+            // KATEGORI
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   _buildSectionHeader(context, "Kategori Layanan", onTapLainnya: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const CategoryPage()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoryPage()));
                   }),
                   const SizedBox(height: 15),
                   Wrap(
-                    spacing: 15,
-                    runSpacing: 20,
-                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 20, 
+                    runSpacing: 25,
+                    alignment: WrapAlignment.center, 
                     children: [
-                      _buildCategoryItem(Icons.cleaning_services, "Asisten Rumah\nTangga"),
-                      _buildCategoryItem(Icons.construction, "Pertukangan &\nKonstruksi"),
-                      _buildCategoryItem(Icons.edit_note, "Edukasi &\nAkademik"),
-                      _buildCategoryItem(Icons.restaurant_menu, "Catering &\nAcara"),
-                      _buildCategoryItem(Icons.spa, "Perawatan &\nLayanan Pribadi"),
-                      _buildCategoryItem(Icons.camera_alt, "Multimedia"),
-                      _buildCategoryItem(Icons.agriculture, "Pertanian &\nPeternakan"),
-                      _buildCategoryItem(Icons.mic, "Seni &\nHiburan"),
+                      _buildCategoryItem(context, Icons.cleaning_services, "Asisten Rumah\nTangga"),
+                      _buildCategoryItem(context, Icons.construction, "Pertukangan &\nKonstruksi"),
+                      _buildCategoryItem(context, Icons.edit_note, "Edukasi &\nAkademik"),
+                      _buildCategoryItem(context, Icons.restaurant_menu, "Catering &\nAcara"),
                     ],
                   ),
                 ],
               ),
             ),
 
-            // --- LAYANAN POPULER ---
+            // LAYANAN POPULER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildSectionHeader(context, "Layanan Populer"),
+              child: _buildSectionHeader(context, "Layanan Populer"), 
             ),
             const SizedBox(height: 15),
             SingleChildScrollView(
@@ -94,32 +83,16 @@ class HomePageClient extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildServiceCard(
-                    "Muhammad Rizki",
-                    "Asisten Rumah Tangga",
-                    "Spesialis : Ahli Bantu Rumah",
-                    "Tarif : Profesional",
-                    "Medan Tembung",
-                    "5.0",
-                    isCardType: true,
-                  ),
+                  _buildServiceCard(context, "Muhammad Rizki", "Asisten Rumah Tangga", "Ahli Bantu Rumah", "Profesional", "Medan Tembung", "5.0", true),
                   const SizedBox(width: 15),
-                  _buildServiceCard(
-                    "Ganjar Pranowo",
-                    "Edukasi & Akademik",
-                    "Spesialis : Guru Les Privat",
-                    "Tarif : Ekonomis",
-                    "Medan Baru",
-                    "4.8",
-                    isCardType: true,
-                  ),
+                  _buildServiceCard(context, "Ganjar Pranowo", "Edukasi & Akademik", "Guru Les Privat", "Ekonomis", "Medan Baru", "4.8", true),
                 ],
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // --- PEKERJA POPULER ---
+            // PEKERJA POPULER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildSectionHeader(context, "Pekerja Populer"),
@@ -131,30 +104,12 @@ class HomePageClient extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildServiceCard(
-                    "Luhut Prabowo",
-                    "Pertukangan & Konstruksi",
-                    "Spesialis : Tukang Bangunan",
-                    "",
-                    "",
-                    "5.0",
-                    isCardType: false,
-                  ),
+                  _buildServiceCard(context, "Luhut Prabowo", "Pertukangan", "Tukang Bangunan", "", "", "5.0", false),
                   const SizedBox(width: 15),
-                  _buildServiceCard(
-                    "Dewi Wangsa",
-                    "Seni & Hiburan",
-                    "Spesialis : Master of Ceremony",
-                    "",
-                    "",
-                    "5.0",
-                    isCardType: false,
-                  ),
+                  _buildServiceCard(context, "Dewi Wangsa", "Seni & Hiburan", "MC Kondang", "", "", "5.0", false),
                 ],
               ),
             ),
-
-            // Jarak bawah agar tidak tertutup Navbar
             const SizedBox(height: 120),
           ],
         ),
@@ -162,216 +117,106 @@ class HomePageClient extends StatelessWidget {
     );
   }
 
-  // --- WIDGET HELPER ---
-
-  Widget _buildSectionHeader(BuildContext context, String title,
-      {VoidCallback? onTapLainnya}) {
+  Widget _buildSectionHeader(BuildContext context, String title, {VoidCallback? onTapLainnya}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), 
         GestureDetector(
-          onTap: onTapLainnya ?? () {},
-          child: const Text("Lainnya",
-              style: TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12)),
+          onTap: onTapLainnya ?? () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoryPage())), 
+          child: const Text("Lainnya", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14)),
         ),
       ],
     );
   }
 
-  Widget _buildCategoryItem(IconData icon, String label) {
-    return SizedBox(
-      width: 70,
+  Widget _buildCategoryItem(BuildContext context, IconData icon, String label) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage(initialQuery: "Asisten")));
+      },
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 70, height: 70, 
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2))
-              ],
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+              border: Border.all(color: Colors.grey.shade100)
             ),
-            child: Icon(icon, color: kPrimaryColor, size: 28),
+            child: Icon(icon, color: kPrimaryColor, size: 35),
           ),
-          const SizedBox(height: 8),
-          Text(label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+          const SizedBox(height: 10),
+          Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  // --- FIXED CARD BUILDER (ANTI OVERFLOW) ---
-  Widget _buildServiceCard(
-    String name,
-    String role,
-    String specialist,
-    String tarif,
-    String location,
-    String rating, {
-    required bool isCardType,
-  }) {
-    return Container(
-      width: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 5,
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Gambar Header
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(15)),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/avatar_placeholder.png'),
-                    fit: BoxFit.cover,
-                    opacity: 0.8,
-                  ),
-                ),
-              ),
-              if (isCardType)
-                Positioned(
-                  bottom: -20,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                          color: Colors.white, shape: BoxShape.circle),
-                      child: const CircleAvatar(
-                          radius: 20,
-                          backgroundImage: AssetImage(
-                              'assets/images/avatar_placeholder.png')),
+  Widget _buildServiceCard(BuildContext context, String name, String role, String specialist, String tarif, String location, String rating, bool isCardType) {
+    return GestureDetector(
+      onTap: () {
+         // Mengarahkan ke ProfilePage sebagai simulasi Detail Pekerja
+         Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage()));
+      },
+      child: Container(
+        width: 240, 
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Stack(
+                children: [
+                  Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      image: const DecorationImage(image: AssetImage('assets/images/avatar_placeholder.png'), fit: BoxFit.cover),
                     ),
                   ),
-                ),
-            ],
-          ),
-          SizedBox(height: isCardType ? 25 : 10),
-
-          // Konten Teks
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Nama
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                
-                // Role
-                Text(
-                  role,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87),
-                ),
-                const SizedBox(height: 2),
-
-                // Spesialis
-                Text(
-                  specialist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 9, color: Colors.grey),
-                ),
-
-                // Tarif (Optional)
-                if (tarif.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    tarif,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 9,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold),
-                  ),
+                  if (isCardType)
+                    Positioned(
+                      bottom: -20, left: 0, right: 0,
+                      child: Center(
+                        child: CircleAvatar(radius: 25, backgroundColor: Colors.white, child: CircleAvatar(radius: 22, backgroundImage: AssetImage('assets/images/avatar_placeholder.png'))),
+                      ),
+                    ),
                 ],
-
-                const SizedBox(height: 8),
-
-                // Lokasi & Rating (Row)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              SizedBox(height: isCardType ? 30 : 15),
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Lokasi (Expanded agar tidak menabrak rating)
-                    if (location.isNotEmpty)
-                      Expanded(
-                        child: Text(
-                          location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 9, color: Colors.black54),
-                        ),
-                      ),
-                    
-                    const SizedBox(width: 4), // Jarak aman
-
-                    // Badge Rating
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: Colors.lightBlue.shade50,
-                          borderRadius: BorderRadius.circular(4)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.star,
-                              size: 10, color: Colors.blue),
-                          const SizedBox(width: 2),
-                          Text(
-                            rating,
-                            style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue),
-                          ),
-                        ],
-                      ),
-                    )
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), 
+                    Text(role, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+                    const SizedBox(height: 5),
+                    Text(specialist, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                     if (tarif.isNotEmpty) Text(tarif, style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.bold)),
+                     const SizedBox(height: 10),
+                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                         if (location.isNotEmpty) Expanded(child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.grey))),
+                         Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                           decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                           child: Row(children: [const Icon(Icons.star, size: 12, color: Colors.blue), const SizedBox(width: 4), Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue))]),
+                         )
+                      ],
+                     )
                   ],
-                )
-              ],
-            ),
-          )
-        ],
+                ),
+              )
+          ],
+        ),
       ),
     );
   }
