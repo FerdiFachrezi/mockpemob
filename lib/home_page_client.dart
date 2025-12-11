@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'components.dart';
 import 'category_page.dart';
 import 'search_page.dart'; 
-import 'profile_page.dart'; // Kita pakai ProfilePage sebagai Detail Pekerja
+import 'worker_profile_page.dart'; 
 
 class HomePageClient extends StatelessWidget {
   const HomePageClient({super.key});
@@ -10,35 +10,49 @@ class HomePageClient extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HEADER
+            // --- 1. HEADER ---
             Container(
-              padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 30),
+              padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 25),
               width: double.infinity,
               color: kPrimaryColor,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Halo", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                  const Text("Lapo Kerja.", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  // Search Bar Action
+                  const Text(
+                    "Halo",
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    "Lapo Kerja.",
+                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 25),
+                  
+                  // Search Bar
                   GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage())),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       height: 50,
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: const Row(
                         children: [
-                          Icon(Icons.search, color: Colors.black54),
-                          SizedBox(width: 10),
-                          Text("Cari Pekerja...", style: TextStyle(color: Colors.grey)),
+                          Icon(Icons.search, size: 28, color: Colors.black87),
+                          SizedBox(width: 12),
+                          Text(
+                            "Cari Pekerja",
+                            style: TextStyle(color: Colors.black54, fontSize: 15),
+                          ),
                         ],
                       ),
                     ),
@@ -47,7 +61,7 @@ class HomePageClient extends StatelessWidget {
               ),
             ),
 
-            // KATEGORI
+            // --- 2. KATEGORI LAYANAN ---
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -56,22 +70,31 @@ class HomePageClient extends StatelessWidget {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoryPage()));
                   }),
                   const SizedBox(height: 15),
-                  Wrap(
-                    spacing: 20, 
-                    runSpacing: 25,
-                    alignment: WrapAlignment.center, 
-                    children: [
-                      _buildCategoryItem(context, Icons.cleaning_services, "Asisten Rumah\nTangga"),
-                      _buildCategoryItem(context, Icons.construction, "Pertukangan &\nKonstruksi"),
-                      _buildCategoryItem(context, Icons.edit_note, "Edukasi &\nAkademik"),
-                      _buildCategoryItem(context, Icons.restaurant_menu, "Catering &\nAcara"),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      double itemWidth = (constraints.maxWidth - 45) / 4; 
+                      return Wrap(
+                        spacing: 15,
+                        runSpacing: 15,
+                        alignment: WrapAlignment.start,
+                        children: [
+                          _buildCategoryItem(context, Icons.cleaning_services_outlined, "Asisten Rumah\nTangga", itemWidth),
+                          _buildCategoryItem(context, Icons.handyman_outlined, "Pertukangan &\nKonstruksi", itemWidth),
+                          _buildCategoryItem(context, Icons.edit_note_outlined, "Edukasi &\nAkademik", itemWidth),
+                          _buildCategoryItem(context, Icons.soup_kitchen_outlined, "Catering &\nAcara", itemWidth),
+                          _buildCategoryItem(context, Icons.spa_outlined, "Perawatan &\nLayanan Pribadi", itemWidth),
+                          _buildCategoryItem(context, Icons.camera_alt_outlined, "Multimedia", itemWidth),
+                          _buildCategoryItem(context, Icons.agriculture_outlined, "Pertanian &\nPeternakan", itemWidth),
+                          _buildCategoryItem(context, Icons.mic_external_on_outlined, "Seni &\nHiburan", itemWidth),
+                        ],
+                      );
+                    }
                   ),
                 ],
               ),
             ),
 
-            // LAYANAN POPULER
+            // --- 3. LAYANAN POPULER ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildSectionHeader(context, "Layanan Populer"), 
@@ -82,17 +105,33 @@ class HomePageClient extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               physics: const BouncingScrollPhysics(),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildServiceCard(context, "Muhammad Rizki", "Asisten Rumah Tangga", "Ahli Bantu Rumah", "Profesional", "Medan Tembung", "5.0", true),
+                  _buildServiceCard(
+                    context, 
+                    name: "Muhammad Rizki", 
+                    role: "Asisten Rumah Tangga", 
+                    specialist: "Ahli Beres Rumah", 
+                    location: "Medan Tembung", 
+                    rating: "5.0"
+                  ),
                   const SizedBox(width: 15),
-                  _buildServiceCard(context, "Ganjar Pranowo", "Edukasi & Akademik", "Guru Les Privat", "Ekonomis", "Medan Baru", "4.8", true),
+                  _buildServiceCard(
+                    context, 
+                    name: "Ganjar Pranowo", 
+                    role: "Edukasi dan Akademik", 
+                    specialist: "Guru les privat", 
+                    location: "Medan Baru", 
+                    rating: "4.9"
+                  ),
+                  const SizedBox(width: 15),
                 ],
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // PEKERJA POPULER
+            // --- 4. PEKERJA POPULER ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildSectionHeader(context, "Pekerja Populer"),
@@ -103,65 +142,174 @@ class HomePageClient extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               physics: const BouncingScrollPhysics(),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildServiceCard(context, "Luhut Prabowo", "Pertukangan", "Tukang Bangunan", "", "", "5.0", false),
+                  _buildWorkerCard(
+                    context,
+                    name: "Luhut Prabowo",
+                    role: "Pertukangan & Konstruksi",
+                    specialist: "Tukang Bangunan",
+                    rating: "5.0"
+                  ),
                   const SizedBox(width: 15),
-                  _buildServiceCard(context, "Dewi Wangsa", "Seni & Hiburan", "MC Kondang", "", "", "5.0", false),
+                  _buildWorkerCard(
+                    context,
+                    name: "Dewi Wangsa",
+                    role: "Seni & Hiburan",
+                    specialist: "Master of Ceremony (MC)",
+                    rating: "5.0"
+                  ),
+                  const SizedBox(width: 15),
                 ],
               ),
             ),
-            const SizedBox(height: 120),
+            const SizedBox(height: 40), 
           ],
         ),
       ),
     );
   }
 
+  // --- WIDGET BUILDERS ---
+
   Widget _buildSectionHeader(BuildContext context, String title, {VoidCallback? onTapLainnya}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), 
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)), 
         GestureDetector(
-          onTap: onTapLainnya ?? () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoryPage())), 
+          onTap: onTapLainnya ?? () {}, 
           child: const Text("Lainnya", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14)),
         ),
       ],
     );
   }
 
-  Widget _buildCategoryItem(BuildContext context, IconData icon, String label) {
+  Widget _buildCategoryItem(BuildContext context, IconData icon, String label, double width) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage(initialQuery: "Asisten")));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage(initialQuery: "Layanan")));
       },
       child: Column(
         children: [
           Container(
-            width: 70, height: 70, 
+            width: width, height: width, 
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
               border: Border.all(color: Colors.grey.shade100)
             ),
-            child: Icon(icon, color: kPrimaryColor, size: 35),
+            child: Icon(icon, color: kPrimaryColor, size: 32),
           ),
-          const SizedBox(height: 10),
-          Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: width + 10,
+            child: Text(
+              label, 
+              textAlign: TextAlign.center, 
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildServiceCard(BuildContext context, String name, String role, String specialist, String tarif, String location, String rating, bool isCardType) {
+  // HAPUS TARIF
+  Widget _buildServiceCard(BuildContext context, {required String name, required String role, required String specialist, required String location, required String rating}) {
     return GestureDetector(
-      onTap: () {
-         // Mengarahkan ke ProfilePage sebagai simulasi Detail Pekerja
-         Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage()));
-      },
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerProfilePage())),
       child: Container(
-        width: 240, 
+        width: 220,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  height: 100,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.grey, 
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/avatar_placeholder.png'),
+                      fit: BoxFit.cover,
+                      opacity: 0.8
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -25,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: const CircleAvatar(
+                      radius: 25,
+                      backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30), 
+            
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
+                  const SizedBox(height: 2),
+                  Text(role, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54), textAlign: TextAlign.center),
+                  const SizedBox(height: 2),
+                  Text("Spesialis : $specialist", style: const TextStyle(fontSize: 10, color: Colors.grey), textAlign: TextAlign.center),
+                  
+                  const SizedBox(height: 10),
+                  const Divider(height: 1, thickness: 0.5),
+                  const SizedBox(height: 8),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.black87)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.lightBlue.shade50, borderRadius: BorderRadius.circular(6)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star, size: 10, color: Colors.blue),
+                            const SizedBox(width: 2),
+                            Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          ],
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWorkerCard(BuildContext context, {required String name, required String role, required String specialist, required String rating}) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerProfilePage())),
+      child: Container(
+        width: 200,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -170,51 +318,41 @@ class HomePageClient extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Stack(
-                children: [
-                  Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      image: const DecorationImage(image: AssetImage('assets/images/avatar_placeholder.png'), fit: BoxFit.cover),
-                    ),
+            Stack(
+              children: [
+                Container(
+                  height: 140,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    image: const DecorationImage(image: AssetImage('assets/images/avatar_placeholder.png'), fit: BoxFit.cover),
                   ),
-                  if (isCardType)
-                    Positioned(
-                      bottom: -20, left: 0, right: 0,
-                      child: Center(
-                        child: CircleAvatar(radius: 25, backgroundColor: Colors.white, child: CircleAvatar(radius: 22, backgroundImage: AssetImage('assets/images/avatar_placeholder.png'))),
-                      ),
-                    ),
+                ),
+                Positioned(
+                  top: 10, right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(8)),
+                    child: Row(children: [const Icon(Icons.star, size: 10, color: kPrimaryColor), const SizedBox(width: 2), Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: kPrimaryColor))]),
+                  ),
+                )
+              ],
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(role, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54)),
+                  const SizedBox(height: 2),
+                  Text("Spesialis : $specialist", style: const TextStyle(fontSize: 10, color: Colors.grey)),
                 ],
               ),
-              SizedBox(height: isCardType ? 30 : 15),
-              Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), 
-                    Text(role, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
-                    const SizedBox(height: 5),
-                    Text(specialist, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                     if (tarif.isNotEmpty) Text(tarif, style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.bold)),
-                     const SizedBox(height: 10),
-                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                         if (location.isNotEmpty) Expanded(child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.grey))),
-                         Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                           decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-                           child: Row(children: [const Icon(Icons.star, size: 12, color: Colors.blue), const SizedBox(width: 4), Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue))]),
-                         )
-                      ],
-                     )
-                  ],
-                ),
-              )
+            )
           ],
         ),
       ),

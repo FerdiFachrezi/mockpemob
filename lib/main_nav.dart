@@ -3,71 +3,60 @@ import 'components.dart';
 import 'home_page.dart';
 import 'profile_page.dart';
 import 'orders_page.dart'; 
-import 'search_page.dart'; // Pastikan SearchPage diimport
-import 'main.dart'; // Import untuk akses MyApp.isClient
+import 'search_page.dart'; 
+import 'main.dart'; 
 
 class MainNav extends StatefulWidget {
   // GlobalKey untuk akses navigasi dari halaman lain
   static final GlobalKey<MainNavState> navKey = GlobalKey<MainNavState>();
+  
+  // Parameter untuk menentukan tab awal yang dibuka (Default = 0 / Home)
+  final int initialIndex; 
 
-  const MainNav({super.key});
+  const MainNav({super.key, this.initialIndex = 0});
 
   @override
   State<MainNav> createState() => MainNavState();
 }
 
 class MainNavState extends State<MainNav> {
-  int _selectedIndex = 0;
-
-  // List halaman dan item navigasi yang akan diisi sesuai peran
+  late int _selectedIndex;
+  
+  // List halaman dan item navigasi
   late List<Widget> _pages;
   late List<BottomNavigationBarItem> _navItems;
 
   @override
   void initState() {
     super.initState();
+    // Set tab awal sesuai parameter yang dikirim
+    _selectedIndex = widget.initialIndex;
     _initializeNavigation();
   }
 
   void _initializeNavigation() {
-    // Cek peran User
+    // Cek peran User (Klien atau Pekerja) dari main.dart
     bool isClient = MyApp.isClient;
 
     if (isClient) {
-      // --- KLIEN: 4 Menu (Home, Search, Orders, Profile) ---
+      // --- NAVIGASI KLIEN (4 Tab) ---
+      // 0: Home, 1: Search, 2: Orders, 3: Profile
       _pages = [
         const HomePage(),
-        const SearchPage(), // Halaman Pencarian
+        const SearchPage(),
         const OrdersPage(),
         const ProfilePage(),
       ];
 
       _navItems = const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined, size: 28),
-          activeIcon: Icon(Icons.home, size: 28),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search, size: 28),
-          // Search biasanya tidak punya varian filled standard, jadi gunakan bold/warna
-          activeIcon: Icon(Icons.search, size: 28, weight: 700), 
-          label: 'Search',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.description_outlined, size: 28),
-          activeIcon: Icon(Icons.description, size: 28),
-          label: 'Orders',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline, size: 28),
-          activeIcon: Icon(Icons.person, size: 28),
-          label: 'Profile',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Cari"),
+        BottomNavigationBarItem(icon: Icon(Icons.assignment), label: "Pesanan"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
       ];
     } else {
-      // --- PEKERJA: 3 Menu (Home, Orders, Profile) ---
-      // Search Dihilangkan
+      // --- NAVIGASI PEKERJA (3 Tab) ---
+      // 0: Home, 1: Orders (Pekerjaan), 2: Profile
       _pages = [
         const HomePage(),
         const OrdersPage(),
@@ -75,21 +64,9 @@ class MainNavState extends State<MainNav> {
       ];
 
       _navItems = const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined, size: 28),
-          activeIcon: Icon(Icons.home, size: 28),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.description_outlined, size: 28),
-          activeIcon: Icon(Icons.description, size: 28),
-          label: 'Orders',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline, size: 28),
-          activeIcon: Icon(Icons.person, size: 28),
-          label: 'Profile',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.assignment), label: "Pekerjaan"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
       ];
     }
   }
@@ -100,26 +77,17 @@ class MainNavState extends State<MainNav> {
     });
   }
 
-  // Fungsi untuk pindah tab secara programatis (dari tombol lain)
+  // Fungsi Helper: Pindah tab secara programatis
+  // Berguna jika ada tombol di Home yang ingin langsung ke tab Pesanan/Profil
   void jumpToTab(int index) {
-    // LOGIKA PENYESUAIAN INDEX UNTUK PEKERJA
-    // Jika Pekerja, urutan index berubah karena 'Search' hilang.
-    // Klien: 0=Home, 1=Search, 2=Orders, 3=Profile
-    // Pekerja: 0=Home, 1=Orders, 2=Profile
-    
+    // Penyesuaian Index jika user adalah PEKERJA (karena jumlah tab beda)
     if (!MyApp.isClient) {
-      // Jika kode lama meminta pindah ke Orders (index 2 pada Klien),
-      // kita arahkan ke index 1 pada Pekerja.
-      if (index == 2) {
-        index = 1; 
-      } 
-      // Jika meminta pindah ke Profile (index 3 pada Klien),
-      // kita arahkan ke index 2 pada Pekerja.
-      else if (index == 3) {
-        index = 2;
-      }
+      // Jika Klien minta ke Orders (idx 2), Pekerja ke Orders (idx 1)
+      if (index == 2) index = 1; 
+      // Jika Klien minta ke Profile (idx 3), Pekerja ke Profile (idx 2)
+      else if (index == 3) index = 2;
     }
-
+    
     setState(() {
       _selectedIndex = index;
     });
@@ -129,16 +97,19 @@ class MainNavState extends State<MainNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: MainNav.navKey,
-      body: _pages[_selectedIndex], // Menampilkan halaman sesuai index
+      body: _pages[_selectedIndex], 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
+        backgroundColor: Colors.white,
+        elevation: 10,
         selectedItemColor: kPrimaryColor,
         unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontSize: 12),
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        showUnselectedLabels: false, // Label sembunyi jika tidak dipilih (opsional)
-        showSelectedLabels: true,
-        items: _navItems, // Item navigasi dinamis
+        items: _navItems,
       ),
     );
   }
