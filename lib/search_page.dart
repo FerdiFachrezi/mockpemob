@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Akses Database
 import 'components.dart';
 import 'worker_profile_page.dart'; 
-import 'main_nav.dart'; // [PENTING] Import MainNav untuk navigasi ke Home
+import 'main_nav.dart'; // Untuk navigasi kembali ke Home
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
@@ -15,43 +16,14 @@ class _SearchPageState extends State<SearchPage> {
   late TextEditingController _searchController;
   final FocusNode _searchFocus = FocusNode();
 
-  final List<String> _recentSearches = [
+  // Tag Populer (Tetap Statis untuk saran cepat)
+  final List<String> _popularTags = [
     "Asisten Rumah Tangga",
     "Tukang Ledeng",
-    "Guru Les Matematika"
-  ];
-
-  final List<String> _popularTags = [
-    "Bersih-bersih",
+    "Guru Les",
     "Supir",
-    "Tukang Cat",
     "Service AC",
-    "Masak",
-    "Laundry"
-  ];
-
-  final List<Map<String, dynamic>> _searchResults = [
-    {
-      "name": "Siti Aminah",
-      "role": "Asisten Rumah Tangga",
-      "rating": "5.0",
-      "location": "Medan Tembung",
-      "image": "assets/images/avatar_placeholder.png"
-    },
-    {
-      "name": "Budi Santoso",
-      "role": "Tukang Ledeng & Pipa",
-      "rating": "4.9",
-      "location": "Medan Kota",
-      "image": "assets/images/avatar_placeholder.png"
-    },
-    {
-      "name": "Rina Nose",
-      "role": "Guru Les Privat",
-      "rating": "4.8",
-      "location": "Medan Baru",
-      "image": "assets/images/avatar_placeholder.png"
-    },
+    "Masak"
   ];
 
   @override
@@ -85,10 +57,10 @@ class _SearchPageState extends State<SearchPage> {
               ),
               child: Row(
                 children: [
-                  // [PERBAIKAN NAVIGASI BACK]
+                  // Tombol Back
                   InkWell(
                     onTap: () {
-                      // Paksa navigasi kembali ke MainNav (Home) index 0
+                      // Kembali ke MainNav (Home Client)
                       Navigator.pushAndRemoveUntil(
                         context, 
                         MaterialPageRoute(
@@ -104,6 +76,8 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  
+                  // Kolom Input
                   Expanded(
                     child: Container(
                       height: 45,
@@ -114,11 +88,9 @@ class _SearchPageState extends State<SearchPage> {
                       child: TextField(
                         controller: _searchController,
                         focusNode: _searchFocus,
-                        autofocus: widget.initialQuery == null,
                         textAlignVertical: TextAlignVertical.center,
                         decoration: InputDecoration(
-                          hintText: "Cari layanan atau pekerja...",
-                          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                          hintText: "Cari layanan atau nama pekerja...",
                           prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
@@ -134,6 +106,7 @@ class _SearchPageState extends State<SearchPage> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
                         onChanged: (val) {
+                          // Update UI saat mengetik untuk filter realtime
                           setState(() {}); 
                         },
                       ),
@@ -143,11 +116,13 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
 
-            // --- 2. KONTEN BODY ---
+            // --- 2. KONTEN HASIL ---
             Expanded(
+              // Jika kosong -> Tampilkan Tag Populer
+              // Jika ada teks -> Cari di Firestore
               child: _searchController.text.isEmpty
                   ? _buildInitialState() 
-                  : _buildResultList(),  
+                  : _buildLiveSearchResults(),  
             ),
           ],
         ),
@@ -155,44 +130,13 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  // Tampilan Default (Saran Kategori)
   Widget _buildInitialState() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_recentSearches.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Pencarian Terakhir", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                GestureDetector(
-                  onTap: () => setState(() => _recentSearches.clear()),
-                  child: const Text("Hapus Semua", style: TextStyle(color: Colors.red, fontSize: 12)),
-                )
-              ],
-            ),
-            const SizedBox(height: 10),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _recentSearches.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.history, color: Colors.grey),
-                  title: Text(_recentSearches[index], style: const TextStyle(color: Colors.black87)),
-                  trailing: const Icon(Icons.north_west, size: 16, color: Colors.grey),
-                  onTap: () {
-                    _searchController.text = _recentSearches[index];
-                    setState(() {});
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 25),
-          ],
-
           const Text("Pencarian Populer", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 15),
           Wrap(
@@ -205,18 +149,79 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildResultList() {
-    return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: _searchResults.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 15),
-      itemBuilder: (context, index) {
-        final item = _searchResults[index];
-        return _buildWorkerCard(item);
+  // --- LOGIKA PENCARIAN FIRESTORE (REAL-TIME) ---
+  Widget _buildLiveSearchResults() {
+    return StreamBuilder<QuerySnapshot>(
+      // 1. Ambil data dari koleksi 'users' dimana role = 'worker'
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'worker')
+          .snapshots(),
+      builder: (context, snapshot) {
+        // State Loading
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        // State Error
+        if (snapshot.hasError) {
+          return const Center(child: Text("Terjadi kesalahan koneksi"));
+        }
+
+        // State Data Kosong di DB
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Belum ada pekerja terdaftar"));
+        }
+
+        // 2. Filter Data di Sisi Aplikasi (Client-side Filtering)
+        // Firestore gratisan tidak mendukung pencarian teks sebagian (LIKE query),
+        // jadi kita ambil semua pekerja lalu filter di sini.
+        final keyword = _searchController.text.toLowerCase();
+        
+        final filteredDocs = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          
+          // Ambil field (Nama, Layanan, Lokasi) dan jadikan huruf kecil
+          final name = (data['name'] ?? '').toString().toLowerCase();
+          final service = (data['serviceCategory'] ?? '').toString().toLowerCase();
+          final location = (data['location'] ?? '').toString().toLowerCase();
+
+          // Cek apakah keyword cocok dengan salah satu field
+          return name.contains(keyword) || service.contains(keyword) || location.contains(keyword);
+        }).toList();
+
+        // Jika hasil filter kosong
+        if (filteredDocs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 60, color: Colors.grey[300]),
+                const SizedBox(height: 10),
+                Text("Tidak ditemukan: \"${_searchController.text}\"", style: TextStyle(color: Colors.grey[600])),
+              ],
+            ),
+          );
+        }
+
+        // 3. Tampilkan Hasil List
+        return ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: filteredDocs.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 15),
+          itemBuilder: (context, index) {
+            // Ambil data dan tambahkan UID dokumen
+            final data = filteredDocs[index].data() as Map<String, dynamic>;
+            data['uid'] = filteredDocs[index].id; 
+            
+            return _buildWorkerCard(data);
+          },
+        );
       },
     );
   }
   
+  // Widget Chip Tag
   Widget _buildTagChip(String label) {
     return GestureDetector(
       onTap: () {
@@ -235,10 +240,24 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  // Widget Kartu Pekerja
   Widget _buildWorkerCard(Map<String, dynamic> data) {
+    // Handling Nilai Null (Safety)
+    String name = data['name'] ?? 'Tanpa Nama';
+    String role = data['serviceCategory'] ?? 'Pekerja Umum';
+    String rating = (data['rating'] ?? 0.0).toString();
+    String location = data['location'] ?? '-';
+    String? imageUrl = data['imageUrl']; // Bisa null
+
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerProfilePage()));
+        // Navigasi ke Halaman Profil Pekerja dengan membawa Data Real
+        Navigator.push(
+          context, 
+          MaterialPageRoute(
+            builder: (context) => WorkerProfilePage(workerData: data) // Kirim map data ke profil
+          )
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -253,19 +272,24 @@ class _SearchPageState extends State<SearchPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Foto Profil
             Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[200],
                 image: DecorationImage(
-                  image: AssetImage(data['image']),
+                  image: (imageUrl != null && imageUrl.isNotEmpty)
+                      ? NetworkImage(imageUrl) 
+                      : const AssetImage('assets/images/avatar_placeholder.png') as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(width: 15),
             
+            // Detail Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,18 +297,18 @@ class _SearchPageState extends State<SearchPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(data['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       Row(
                         children: [
                           const Icon(Icons.star, color: Colors.orange, size: 14),
                           const SizedBox(width: 4),
-                          Text(data['rating'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         ],
                       )
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(data['role'], style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text(role, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 8),
                   
                   Row(
@@ -292,7 +316,7 @@ class _SearchPageState extends State<SearchPage> {
                       const Icon(Icons.location_on, size: 14, color: Colors.grey),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text(data['location'], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.grey))
+                        child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.grey))
                       ),
                     ],
                   ),

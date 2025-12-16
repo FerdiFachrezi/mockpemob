@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'components.dart';
 import 'signup_page.dart';
 import 'main_nav.dart';
-import 'main.dart'; // Penting: Akses MyApp.isClient
-import 'services/auth_service.dart'; // Penting: Akses Logic Login
+import 'main.dart'; // Akses MyApp.isClient
+import 'services/auth_service.dart'; // Akses Service Login
+import 'models/user_model.dart'; // PENTING: Import Model agar tipe data dikenali
+import 'profile_setup_page.dart'; // Untuk redirect user Google baru
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,16 +15,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controller
+  // Controller Input
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   
   bool _isPasswordVisible = false;
   bool _isLoading = false; 
 
-  // --- LOGIKA LOGIN ---
+  // --- 1. LOGIKA LOGIN EMAIL (MANUAL) ---
   void _handleLogin() async {
-    // 1. Validasi Input Kosong
+    // A. Validasi Input Kosong
     if (_emailController.text.isEmpty || _passController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Email dan Password harus diisi"))
@@ -30,49 +32,84 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() => _isLoading = true); // Mulai Loading
+    setState(() => _isLoading = true);
 
     try {
-      // 2. Panggil Service Login
-      final userModel = await AuthService().signIn(
+      // B. Panggil Service (Eksplisit menggunakan UserModel)
+      UserModel? userModel = await AuthService().signIn(
         _emailController.text.trim(), 
         _passController.text.trim()
       );
 
-      if (!mounted) return; // Cek jika widget masih aktif
+      if (!mounted) return;
 
       if (userModel != null) {
-        // 3. SUKSES: Update Role Aplikasi
-        // Jika role di database == 'client', set MyApp.isClient = true
-        // Jika role == 'worker', set MyApp.isClient = false
+        // C. Update Peran Global Aplikasi
         setState(() {
           MyApp.isClient = (userModel.role == 'client');
         });
 
-        // 4. Navigasi ke Halaman Utama
+        // D. Masuk ke Halaman Utama
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainNav(initialIndex: 0)),
+          MaterialPageRoute(builder: (context) => const MainNav()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Data profil tidak ditemukan."))
+          const SnackBar(content: Text("Login gagal. Data profil tidak ditemukan."))
         );
       }
     } catch (e) {
-      // 5. GAGAL (Password Salah / User Tidak Ada)
-      String errorMessage = "Login Gagal. Periksa email & password Anda.";
-      if (e.toString().contains("user-not-found")) {
-        errorMessage = "Email tidak terdaftar.";
-      } else if (e.toString().contains("wrong-password")) {
-        errorMessage = "Password salah.";
-      }
-
+      // Error Handling
+      String err = e.toString();
+      if (err.contains("user-not-found")) err = "Email tidak terdaftar.";
+      else if (err.contains("wrong-password")) err = "Password salah.";
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text(errorMessage))
+        SnackBar(backgroundColor: Colors.red, content: Text("Gagal Masuk: $err"))
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false); // Stop Loading
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- 2. LOGIKA LOGIN GOOGLE (TAP LOGIN) ---
+  void _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // A. Panggil Service Google (Eksplisit menggunakan UserModel)
+      UserModel? userModel = await AuthService().signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (userModel != null) {
+        // B. Update Peran Global
+        setState(() {
+          MyApp.isClient = (userModel.role == 'client');
+        });
+
+        // C. Cek Kelengkapan Data (Redirect Pintar)
+        // Jika lokasi masih kosong atau "-", berarti User Baru -> ke Setup Profil
+        if (userModel.location == "-" || userModel.location == null || userModel.location!.isEmpty) {
+           Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileSetupPage()),
+          );
+        } else {
+          // Jika data lengkap -> ke Halaman Utama
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNav()),
+          );
+        }
+      } 
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(e.toString())) // Tampilkan error asli jika ada
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -99,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                 const InputLabel(label: "Email"),
                 CustomTextField(
                   hintText: "user@gmail.com", 
-                  controller: _emailController 
+                  controller: _emailController
                 ),
                 const SizedBox(height: 20),
 
@@ -108,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: "••••••••••••",
                   isPassword: true,
                   isVisible: _isPasswordVisible,
-                  controller: _passController, 
+                  controller: _passController,
                   onVisibilityToggle: () {
                     setState(() {
                       _isPasswordVisible = !_isPasswordVisible;
@@ -117,12 +154,12 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Tombol LOGIN
+                // TOMBOL MASUK (EMAIL)
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin, // Panggil fungsi di sini
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPrimaryColor,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -135,7 +172,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 15),
 
-                GoogleButton(onPressed: () {}),
+                // TOMBOL MASUK (GOOGLE)
+                GoogleButton(
+                  onPressed: _isLoading ? () {} : _handleGoogleLogin, // Panggil Fungsi Google
+                ),
 
                 const SizedBox(height: 20),
                 

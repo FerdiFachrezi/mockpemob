@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'components.dart';
 import 'category_page.dart';
 import 'search_page.dart'; 
@@ -100,85 +101,98 @@ class HomePageClient extends StatelessWidget {
               child: _buildSectionHeader(
                 context, 
                 "Layanan Populer",
-                // [UPDATE 1] Navigasi ke SearchPage dengan query "Layanan Populer"
-                onTapLainnya: () {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => const SearchPage(initialQuery: "Layanan Populer")
-                  ));
-                }
+                onTapLainnya: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage(initialQuery: "")))
               ), 
             ),
             const SizedBox(height: 15),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildServiceCard(
-                    context, 
-                    name: "Muhammad Rizki", 
-                    role: "Asisten Rumah Tangga", 
-                    specialist: "Ahli Beres Rumah", 
-                    location: "Medan Tembung", 
-                    rating: "5.0"
-                  ),
-                  const SizedBox(width: 15),
-                  _buildServiceCard(
-                    context, 
-                    name: "Ganjar Pranowo", 
-                    role: "Edukasi dan Akademik", 
-                    specialist: "Guru les privat", 
-                    location: "Medan Baru", 
-                    rating: "4.9"
-                  ),
-                  const SizedBox(width: 15),
-                ],
+            
+            // [FIX] Mengubah tinggi dari 185 menjadi 220 agar tidak overflow
+            SizedBox(
+              height: 220, 
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .where('role', isEqualTo: 'worker')
+                    .orderBy('reviewCount', descending: true)
+                    .limit(5)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(left: 20),
+                      child: Text("Belum ada data populer.", style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5), // Tambah padding vertikal sedikit
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: snapshot.data!.docs.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 15),
+                    itemBuilder: (context, index) {
+                      var doc = snapshot.data!.docs[index];
+                      var data = doc.data() as Map<String, dynamic>;
+                      data['uid'] = doc.id; 
+
+                      return _buildServiceCard(context, data);
+                    },
+                  );
+                },
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // --- 4. PEKERJA POPULER ---
+            // --- 4. PEKERJA FAVORIT ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildSectionHeader(
                 context, 
-                "Pekerja Populer",
-                // [UPDATE 2] Navigasi ke SearchPage dengan query "Pekerja Populer"
-                onTapLainnya: () {
-                   Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => const SearchPage(initialQuery: "Pekerja Populer")
-                  ));
-                }
+                "Pekerja Favorit",
+                onTapLainnya: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchPage(initialQuery: "")))
               ),
             ),
             const SizedBox(height: 15),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildWorkerCard(
-                    context,
-                    name: "Luhut Prabowo",
-                    role: "Pertukangan & Konstruksi",
-                    specialist: "Tukang Bangunan",
-                    rating: "5.0"
-                  ),
-                  const SizedBox(width: 15),
-                  _buildWorkerCard(
-                    context,
-                    name: "Dewi Wangsa",
-                    role: "Seni & Hiburan",
-                    specialist: "Master of Ceremony (MC)",
-                    rating: "5.0"
-                  ),
-                  const SizedBox(width: 15),
-                ],
+
+            SizedBox(
+              height: 220,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .where('role', isEqualTo: 'worker')
+                    .orderBy('rating', descending: true)
+                    .limit(5)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(left: 20),
+                      child: Text("Belum ada pekerja.", style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: snapshot.data!.docs.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 15),
+                    itemBuilder: (context, index) {
+                      var doc = snapshot.data!.docs[index];
+                      var data = doc.data() as Map<String, dynamic>;
+                      data['uid'] = doc.id;
+
+                      return _buildWorkerCard(context, data);
+                    },
+                  );
+                },
               ),
             ),
             const SizedBox(height: 40), 
@@ -206,7 +220,6 @@ class HomePageClient extends StatelessWidget {
   Widget _buildCategoryItem(BuildContext context, IconData icon, String label, double width) {
     return GestureDetector(
       onTap: () {
-        // Navigasi ke SearchPage dengan query nama kategori
         Navigator.push(context, MaterialPageRoute(builder: (context) => SearchPage(initialQuery: label.replaceAll("\n", " "))));
       },
       child: Column(
@@ -237,9 +250,22 @@ class HomePageClient extends StatelessWidget {
     );
   }
 
-  Widget _buildServiceCard(BuildContext context, {required String name, required String role, required String specialist, required String location, required String rating}) {
+  // Card Layanan Populer (Yang diperbaiki)
+  Widget _buildServiceCard(BuildContext context, Map<String, dynamic> data) {
+    String name = data['name'] ?? 'Tanpa Nama';
+    String role = data['serviceCategory'] ?? 'Umum';
+    String location = data['location'] ?? '-';
+    String rating = (data['rating'] ?? 0.0).toStringAsFixed(1);
+    String? imageUrl = data['imageUrl'];
+    String skills = data['skills'] ?? ''; 
+    String specialist = skills.split(',').firstOrNull ?? role;
+
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerProfilePage())),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => WorkerProfilePage(workerData: data)
+        ));
+      },
       child: Container(
         width: 220,
         decoration: BoxDecoration(
@@ -254,44 +280,47 @@ class HomePageClient extends StatelessWidget {
               alignment: Alignment.bottomCenter,
               children: [
                 Container(
-                  height: 100,
+                  height: 90,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.grey, 
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200, 
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     image: DecorationImage(
-                      image: AssetImage('assets/images/avatar_placeholder.png'),
+                      image: (imageUrl != null && imageUrl.isNotEmpty) 
+                          ? NetworkImage(imageUrl) as ImageProvider
+                          : const AssetImage('assets/images/avatar_placeholder.png'),
                       fit: BoxFit.cover,
-                      opacity: 0.8
                     ),
                   ),
                 ),
                 Positioned(
-                  bottom: -25,
+                  bottom: -20,
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const CircleAvatar(
-                      radius: 25,
-                      backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: (imageUrl != null && imageUrl.isNotEmpty) 
+                          ? NetworkImage(imageUrl) as ImageProvider
+                          : const AssetImage('assets/images/avatar_placeholder.png'),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 30), 
+            const SizedBox(height: 25), 
             
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: Column(
                 children: [
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
+                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
                   const SizedBox(height: 2),
-                  Text(role, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54), textAlign: TextAlign.center),
+                  Text(role, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54), textAlign: TextAlign.center),
                   const SizedBox(height: 2),
-                  Text("Spesialis : $specialist", style: const TextStyle(fontSize: 10, color: Colors.grey), textAlign: TextAlign.center),
+                  Text(specialist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.grey), textAlign: TextAlign.center),
                   
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   const Divider(height: 1, thickness: 0.5),
                   const SizedBox(height: 8),
                   
@@ -299,7 +328,13 @@ class HomePageClient extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.black87)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 10, color: Colors.grey),
+                            const SizedBox(width: 2),
+                            Expanded(child: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.black87))),
+                          ],
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -323,11 +358,23 @@ class HomePageClient extends StatelessWidget {
     );
   }
 
-  Widget _buildWorkerCard(BuildContext context, {required String name, required String role, required String specialist, required String rating}) {
+  // Card Pekerja Favorit
+  Widget _buildWorkerCard(BuildContext context, Map<String, dynamic> data) {
+    String name = data['name'] ?? 'Tanpa Nama';
+    String role = data['serviceCategory'] ?? 'Umum';
+    String rating = (data['rating'] ?? 0.0).toStringAsFixed(1);
+    String? imageUrl = data['imageUrl'];
+    String skills = data['skills'] ?? '';
+    String specialist = skills.split(',').firstOrNull ?? role;
+
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WorkerProfilePage())),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => WorkerProfilePage(workerData: data)
+        ));
+      },
       child: Container(
-        width: 200,
+        width: 160,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -339,12 +386,17 @@ class HomePageClient extends StatelessWidget {
             Stack(
               children: [
                 Container(
-                  height: 140,
+                  height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    image: const DecorationImage(image: AssetImage('assets/images/avatar_placeholder.png'), fit: BoxFit.cover),
+                    image: DecorationImage(
+                      image: (imageUrl != null && imageUrl.isNotEmpty) 
+                          ? NetworkImage(imageUrl) as ImageProvider
+                          : const AssetImage('assets/images/avatar_placeholder.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -363,11 +415,11 @@ class HomePageClient extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 2),
-                  Text(role, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54)),
+                  Text(role, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54)),
                   const SizedBox(height: 2),
-                  Text("Spesialis : $specialist", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text(specialist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                 ],
               ),
             )

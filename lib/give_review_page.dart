@@ -1,173 +1,201 @@
 import 'package:flutter/material.dart';
-import 'components.dart'; // Memerlukan kPrimaryColor
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'components.dart';
+import 'main_nav.dart';
 
 class GiveReviewPage extends StatefulWidget {
-  const GiveReviewPage({super.key});
+  final String workerId;
+  final String workerName;
+  final String? workerImage;
+  final String orderId;
+
+  const GiveReviewPage({
+    super.key,
+    required this.workerId,
+    required this.workerName,
+    this.workerImage,
+    required this.orderId,
+  });
 
   @override
   State<GiveReviewPage> createState() => _GiveReviewPageState();
 }
 
 class _GiveReviewPageState extends State<GiveReviewPage> {
-  // State untuk menyimpan rating yang dipilih (0-5)
   int _selectedRating = 0;
-  // Controller untuk input komentar
+  String _selectedResponseSpeed = "Cepat"; 
   final TextEditingController _commentController = TextEditingController();
+  bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
+  final List<String> _responseOptions = ["Cepat", "Sedang", "Lambat"];
+
+  Future<void> _submitReview() async {
+    if (_selectedRating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Mohon berikan penilaian bintang."))
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("permission-denied"); // Simulasi error jika user null
+      }
+
+      // 1. Simpan Ulasan
+      await FirebaseFirestore.instance.collection('reviews').add({
+        'workerId': widget.workerId,
+        'clientId': user.uid,
+        'clientName': user.displayName ?? "Pengguna",
+        'clientImage': user.photoURL,
+        'rating': _selectedRating,
+        'responseSpeed': _selectedResponseSpeed,
+        'comment': _commentController.text,
+        'orderId': widget.orderId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 2. Update Rating Worker
+      final workerRef = FirebaseFirestore.instance.collection('users').doc(widget.workerId);
+      
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot workerDoc = await transaction.get(workerRef);
+        if (workerDoc.exists) {
+          Map<String, dynamic> data = workerDoc.data() as Map<String, dynamic>;
+          double currentRating = (data['rating'] ?? 0.0).toDouble();
+          int reviewCount = (data['reviewCount'] ?? 0).toInt();
+          double newRating = ((currentRating * reviewCount) + _selectedRating) / (reviewCount + 1);
+          
+          transaction.update(workerRef, {
+            'rating': newRating,
+            'reviewCount': reviewCount + 1,
+            'avgResponseSpeed': _selectedResponseSpeed, 
+          });
+        }
+      });
+
+      // 3. Update Order Status
+      await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).update({
+        'isReviewed': true, 
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Terima kasih! Ulasan berhasil dikirim."))
+      );
+      
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNav(initialIndex: 0)),
+        (route) => false,
+      );
+
+    } catch (e) {
+      // [UPDATE] Menggunakan pesan error yang ramah
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(getFriendlyErrorMessage(e)))
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Style dekorasi kartu putih yang berulang
-    final BoxDecoration cardDecoration = BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.08),
-          blurRadius: 15,
-          offset: const Offset(0, 5),
-        )
-      ],
-    );
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Warna background sesuai desain
-      body: SafeArea(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text("Beri Ulasan", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: const BackButton(color: Colors.black),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // --- 1. HEADER ---
-            _buildHeader(context),
-
-            // --- 2. KONTEN SCROLLABLE ---
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Column(
-                  children: [
-                    // Kartu Info Pekerja
-                    Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: cardDecoration,
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 25,
-                            backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
-                          ),
-                          const SizedBox(width: 15),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Lala Jola", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              SizedBox(height: 4),
-                              Text("Asisten Rumah Tangga", style: TextStyle(color: Colors.grey, fontSize: 13)),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Kartu Rating Bintang
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
-                      width: double.infinity,
-                      decoration: cardDecoration,
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            // Menghasilkan 5 bintang interaktif
-                            children: List.generate(5, (index) {
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedRating = index + 1;
-                                  });
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                                  child: Icon(
-                                    // Ubah ikon berdasarkan rating yang dipilih
-                                    index < _selectedRating ? Icons.star : Icons.star_border_purple500_outlined,
-                                    color: index < _selectedRating ? kPrimaryColor : Colors.grey.shade400, // Warna bintang aktif/inaktif
-                                    size: 40,
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 15),
-                          const Text("Beri Penilaian Anda", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Kartu Input Komentar
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: cardDecoration,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Tambahkan Komentar (Opsional)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: _commentController,
-                            maxLines: 5, // Area teks yang cukup tinggi
-                            decoration: const InputDecoration(
-                              hintText: "Berikan Komentar Anda disini",
-                              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                              border: InputBorder.none, // Menghilangkan garis border default
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            const Text("Bagaimana pengalaman Anda menggunakan jasa ini?", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+              child: Row(
+                children: [
+                  CircleAvatar(radius: 25, backgroundImage: AssetImage(widget.workerImage ?? 'assets/images/avatar_placeholder.png')),
+                  const SizedBox(width: 15),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.workerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Text("Penyedia Jasa", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  )
+                ],
               ),
             ),
-
-            // --- 3. TOMBOL KIRIM (Footer) ---
+            const SizedBox(height: 25),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedRating = index + 1),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: Icon(index < _selectedRating ? Icons.star : Icons.star_border_rounded, color: index < _selectedRating ? Colors.orange : Colors.grey.shade300, size: 45),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 10),
+            Text(_selectedRating == 0 ? "Sentuh bintang untuk menilai" : _getRatingLabel(_selectedRating), style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryColor)),
+            const SizedBox(height: 30),
+            const Align(alignment: Alignment.centerLeft, child: Text("Kecepatan Respon Pekerja", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(20),
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Validasi sederhana: Pastikan bintang sudah dipilih
-                  if (_selectedRating == 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Mohon berikan penilaian bintang terlebih dahulu."))
-                    );
-                    return;
-                  }
-                  
-                  // TODO: Logika kirim ulasan ke backend di sini
-                  
-                  // Tutup halaman dan beri feedback
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Terima kasih! Ulasan Anda telah dikirim."))
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+              child: Wrap(
+                spacing: 10,
+                alignment: WrapAlignment.spaceEvenly,
+                children: _responseOptions.map((option) {
+                  bool isSelected = _selectedResponseSpeed == option;
+                  return ChoiceChip(
+                    label: Text(option),
+                    selected: isSelected,
+                    selectedColor: kPrimaryColor,
+                    labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                    onSelected: (selected) {
+                      if (selected) setState(() => _selectedResponseSpeed = option);
+                    },
                   );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor, // Warna biru tua
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "Kirim Ulasan",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+              child: TextField(
+                controller: _commentController,
+                maxLines: 4,
+                decoration: const InputDecoration.collapsed(hintText: "Tuliskan pengalaman Anda di sini..."),
+              ),
+            ),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submitReview,
+                style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("KIRIM ULASAN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -176,44 +204,14 @@ class _GiveReviewPageState extends State<GiveReviewPage> {
     );
   }
 
-  // Widget Header Kustom sesuai desain
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Tombol Kembali (Kiri)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5)],
-                    ),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
-                  ),
-                ),
-              ),
-              // Judul Tengah
-              const Text("Beri Ulasan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 15),
-          // Sub-judul
-          const Text(
-            "Ulasan Anda membantu kami menjaga kualitas layanan",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-          ),
-        ],
-      ),
-    );
+  String _getRatingLabel(int rating) {
+    switch (rating) {
+      case 1: return "Sangat Buruk";
+      case 2: return "Buruk";
+      case 3: return "Cukup";
+      case 4: return "Bagus";
+      case 5: return "Sangat Memuaskan!";
+      default: return "";
+    }
   }
 }

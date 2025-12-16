@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Akses User
 import 'components.dart';
 import 'profile_setup_page.dart'; // Halaman tujuan setelah daftar
+import 'main_nav.dart'; // Navigasi ke Home jika ternyata user lama login via Google
+import 'main.dart'; // Akses MyApp.isClient
 import 'services/auth_service.dart'; // Service Auth
-import 'main.dart'; // PENTING: Untuk akses & update MyApp.isClient
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -19,21 +20,11 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _passController = TextEditingController();
 
   bool _isPasswordVisible = false;
-  bool _isLoading = false; 
-  
-  // State lokal untuk pilihan Role (Default ambil dari pilihan WelcomePage)
-  late bool _isClientSelected;
+  bool _isLoading = false; // Untuk loading state
 
-  @override
-  void initState() {
-    super.initState();
-    // Inisialisasi status role dari global variable
-    _isClientSelected = MyApp.isClient;
-  }
-
-  // --- LOGIKA PENDAFTARAN ---
+  // --- 1. LOGIKA PENDAFTARAN EMAIL (MANUAL) ---
   void _handleSignUp() async {
-    // 1. Validasi Input
+    // A. Validasi Input
     if (_nameController.text.isEmpty || 
         _emailController.text.isEmpty || 
         _passController.text.isEmpty) {
@@ -46,37 +37,33 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 2. Update Role Global sesuai pilihan terakhir di halaman ini
-      MyApp.isClient = _isClientSelected;
-
-      // 3. Buat Akun di Firebase Auth
+      // B. Buat Akun di Firebase Auth
       User? user = await AuthService().signUp(
         _emailController.text.trim(), 
         _passController.text.trim()
       );
       
       if (user != null) {
-        // 4. Update Display Name (Simpan Nama di Auth sementara)
+        // C. Update Display Name (Simpan Nama di Auth sementara)
         await user.updateDisplayName(_nameController.text.trim());
         await user.reload(); 
 
         if (!mounted) return;
 
-        // 5. Navigasi ke Setup Profil
-        // Di halaman ProfileSetupPage nanti, data akan disimpan ke Firestore
-        // berdasarkan role (MyApp.isClient) yang sudah kita set di sini.
+        // D. Navigasi ke Setup Profil
+        // Kita gunakan pushReplacement agar user tidak bisa back ke halaman daftar
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ProfileSetupPage()),
         );
       }
     } catch (e) {
-      // Error Handling
+      // Error Handling (Email sudah ada, Password lemah, dll)
       String message = "Gagal mendaftar: ${e.toString()}";
       if (e.toString().contains("email-already-in-use")) {
         message = "Email sudah terdaftar. Silakan login.";
       } else if (e.toString().contains("weak-password")) {
-        message = "Password terlalu lemah (min. 6 karakter).";
+        message = "Password terlalu lemah. Gunakan minimal 6 karakter.";
       }
 
       if (mounted) {
@@ -84,6 +71,47 @@ class _SignUpPageState extends State<SignUpPage> {
           SnackBar(backgroundColor: Colors.red, content: Text(message))
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- 2. LOGIKA PENDAFTARAN GOOGLE (TAP LOGIN) ---
+  void _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Panggil fungsi Google Sign-In dari AuthService
+      // Fungsi ini pintar: Auto Register jika user baru, Auto Login jika user lama
+      final userModel = await AuthService().signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (userModel != null) {
+        // A. Update Role Global Aplikasi
+        setState(() {
+          MyApp.isClient = (userModel.role == 'client');
+        });
+
+        // B. Cek Kelengkapan Data
+        // Jika User Baru (lokasi masih "-"), arahkan ke Setup Profil untuk melengkapi data
+        if (userModel.location == "-" || userModel.location == null) {
+           Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileSetupPage()),
+          );
+        } else {
+          // Jika ternyata User Lama (data lengkap), langsung ke Home
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNav()),
+          );
+        }
+      } 
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text("Google Sign-Up Gagal: $e"))
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -103,38 +131,17 @@ class _SignUpPageState extends State<SignUpPage> {
               children: [
                 const Center(
                   child: Text(
-                    "Buat Akun Baru",
+                    "Buat akun",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: kTextColor,
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Center(child: Text("Silakan lengkapi data diri Anda", style: TextStyle(color: Colors.grey))),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
 
-                // --- PILIHAN ROLE (Klien / Pekerja) ---
-                // Sesuai SRS: Meminta tipe akun pada saat registrasi 
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: kInputFillColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildRoleTab("Saya Klien", true),
-                      _buildRoleTab("Saya Pekerja", false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 25),
-
-                // --- FORM INPUT ---
                 const InputLabel(label: "Nama Lengkap"),
                 CustomTextField(
                   hintText: "Nama Anda",
@@ -163,7 +170,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // Tombol DAFTAR
+                // TOMBOL DAFTAR (EMAIL)
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -181,7 +188,12 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 
                 const SizedBox(height: 15),
-                GoogleButton(onPressed: () {}),
+
+                // TOMBOL DAFTAR (GOOGLE)
+                GoogleButton(
+                  onPressed: _isLoading ? () {} : _handleGoogleLogin, // Terhubung ke fungsi Google
+                ),
+
                 const SizedBox(height: 20),
 
                 Row(
@@ -203,36 +215,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ],
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Widget Helper untuk Tab Role
-  Widget _buildRoleTab(String title, bool isClientTab) {
-    bool isActive = _isClientSelected == isClientTab;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _isClientSelected = isClientTab;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? kPrimaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isActive ? Colors.white : Colors.grey,
-              fontSize: 14
             ),
           ),
         ),

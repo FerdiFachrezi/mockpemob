@@ -12,7 +12,20 @@
           "package_name": "com.example.mockpemob"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "985805167626-6mrtm9ilqjvvc2h2f73gril6180t43ds.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mockpemob",
+            "certificate_hash": "33f44fc4e80a63ad391d4400937308f8fc937c5a"
+          }
+        },
+        {
+          "client_id": "985805167626-f1rub7an3mlt2ebefspgfq1kv2pr3mb9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCENC58raUsFfl1dAh8btvjAG5t6lngvUY"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "985805167626-f1rub7an3mlt2ebefspgfq1kv2pr3mb9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

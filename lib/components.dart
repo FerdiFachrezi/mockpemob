@@ -35,7 +35,7 @@ class CustomTextField extends StatelessWidget {
   final bool isPassword;
   final bool isVisible;
   final VoidCallback? onVisibilityToggle;
-  final TextEditingController? controller; // <--- TAMBAHAN BARU
+  final TextEditingController? controller; 
 
   const CustomTextField({
     super.key,
@@ -43,7 +43,7 @@ class CustomTextField extends StatelessWidget {
     this.isPassword = false,
     this.isVisible = false,
     this.onVisibilityToggle,
-    this.controller, // <--- TAMBAHAN BARU
+    this.controller,
   });
 
   @override
@@ -52,10 +52,10 @@ class CustomTextField extends StatelessWidget {
       decoration: BoxDecoration(
         color: kInputFillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300), // Tambahan border tipis biar lebih tegas
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: TextField(
-        controller: controller, // <--- DIPASANG DISINI
+        controller: controller, 
         obscureText: isPassword && !isVisible,
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -112,8 +112,6 @@ class PrimaryButton extends StatelessWidget {
 }
 
 // Tombol Google (Ungu Muda)
-// File: lib/components.dart
-
 class GoogleButton extends StatelessWidget {
   final VoidCallback onPressed;
 
@@ -136,13 +134,12 @@ class GoogleButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Langsung menampilkan Gambar tanpa Container/Lingkaran putih
             Image.asset(
               'assets/images/google.png',
-              height: 24, // Ukuran sedikit diperbesar agar proporsional
+              height: 24, 
               width: 24,
             ),
-            const SizedBox(width: 12), // Jarak antara logo dan teks
+            const SizedBox(width: 12), 
             const Text(
               "MASUK DENGAN GOOGLE",
               style: TextStyle(
@@ -157,4 +154,44 @@ class GoogleButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// --- [BARU] HELPER: PENERJEMAH ERROR ---
+// Fungsi ini mengubah kode error Firebase menjadi bahasa Indonesia yang ramah
+String getFriendlyErrorMessage(dynamic error) {
+  String e = error.toString().toLowerCase();
+
+  if (e.contains("permission-denied") || e.contains("permission_denied")) {
+    return "Akses ditolak. Pastikan Anda sudah login atau memiliki izin.";
+  }
+  if (e.contains("unavailable") || e.contains("network") || e.contains("offline")) {
+    return "Gagal terhubung. Periksa koneksi internet Anda.";
+  }
+  if (e.contains("not-found")) {
+    return "Data tidak ditemukan.";
+  }
+  if (e.contains("requires an index")) {
+    return "Sistem sedang mengoptimalkan database. Silakan coba sesaat lagi.";
+  }
+  if (e.contains("user-not-found")) {
+    return "Akun tidak ditemukan. Silakan daftar terlebih dahulu.";
+  }
+  if (e.contains("wrong-password")) {
+    return "Password salah. Silakan coba lagi.";
+  }
+  if (e.contains("email-already-in-use")) {
+    return "Email sudah terdaftar. Gunakan email lain atau login.";
+  }
+  if (e.contains("invalid-email")) {
+    return "Format email tidak valid.";
+  }
+  if (e.contains("weak-password")) {
+    return "Password terlalu lemah (min. 6 karakter).";
+  }
+  if (e.contains("cancelled")) {
+    return "Operasi dibatalkan.";
+  }
+
+  // Jika error tidak dikenali, tampilkan pesan umum
+  return "Terjadi kesalahan sistem. Silakan coba lagi nanti.";
 }

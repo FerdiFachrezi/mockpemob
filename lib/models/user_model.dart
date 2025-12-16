@@ -5,12 +5,15 @@ class UserModel {
   final String role; // 'client' atau 'worker'
   final String? location;
   final String? imageUrl;
-  // Khusus Pekerja
-  final String? serviceCategory; // e.g. ART, Pertukangan [cite: 40]
-  final String? rateCategory; // e.g. Profesional, Standar
-  final String? bio;
-  final double rating;
+  
+  // --- Field Khusus Pekerja (Nullable / Boleh Kosong untuk Klien) ---
+  final String? serviceCategory; // Contoh: "Asisten Rumah Tangga"
+  final String? rateCategory;    // Contoh: "Profesional", "Standar"
+  final String? bio;             // Deskripsi singkat
+  final String? skills;          // Keahlian, contoh: "Masak, Setrika"
+  final double rating;           // Rating bintang (0.0 - 5.0)
 
+  // Constructor
   UserModel({
     required this.uid,
     required this.email,
@@ -21,9 +24,31 @@ class UserModel {
     this.serviceCategory,
     this.rateCategory,
     this.bio,
+    this.skills,
     this.rating = 0.0,
   });
 
+  // 1. Factory: Mengubah JSON (Map) dari Firestore menjadi Object Dart
+  // Digunakan saat mengambil data dari database untuk ditampilkan di aplikasi
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel(
+      uid: map['uid'] ?? '',
+      email: map['email'] ?? '',
+      name: map['name'] ?? '',
+      role: map['role'] ?? 'client', // Default ke client jika kosong
+      location: map['location'] ?? '-',
+      imageUrl: map['imageUrl'],
+      serviceCategory: map['serviceCategory'],
+      rateCategory: map['rateCategory'],
+      bio: map['bio'],
+      skills: map['skills'],
+      // Pastikan rating dikonversi ke double agar tidak error
+      rating: (map['rating'] ?? 0.0).toDouble(),
+    );
+  }
+
+  // 2. Method: Mengubah Object Dart menjadi JSON (Map)
+  // Digunakan saat menyimpan data profil ke Firestore
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -35,22 +60,8 @@ class UserModel {
       'serviceCategory': serviceCategory,
       'rateCategory': rateCategory,
       'bio': bio,
+      'skills': skills,
       'rating': rating,
     };
-  }
-
-  factory UserModel.fromMap(Map<String, dynamic> map) {
-    return UserModel(
-      uid: map['uid'] ?? '',
-      email: map['email'] ?? '',
-      name: map['name'] ?? '',
-      role: map['role'] ?? 'client',
-      location: map['location'],
-      imageUrl: map['imageUrl'],
-      serviceCategory: map['serviceCategory'],
-      rateCategory: map['rateCategory'],
-      bio: map['bio'],
-      rating: (map['rating'] ?? 0.0).toDouble(),
-    );
   }
 }

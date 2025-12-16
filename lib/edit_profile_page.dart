@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:image_picker/image_picker.dart'; // Kita matikan dulu karena tidak upload
 import 'components.dart';
-import 'main.dart'; // Import untuk akses MyApp.isClient
+import 'main.dart'; 
+import 'models/user_model.dart'; 
+import 'services/auth_service.dart'; 
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -10,34 +15,115 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  // Controller (diisi data mock sesuai role)
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
-  late TextEditingController _locationController;
-  final TextEditingController _layananController = TextEditingController(text: "Asisten Rumah Tangga");
-  final TextEditingController _tarifController = TextEditingController(text: "Profesional");
+  // Controller
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  
+  // Khusus Pekerja
+  final TextEditingController _serviceController = TextEditingController();
+  final TextEditingController _tarifController = TextEditingController();
+  final TextEditingController _skillsController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
+
+  // State
+  bool _isLoading = false;
+  String? _photoUrl; // URL foto dari Firebase Auth (Google)
+
+  final List<String> _layananOptions = [
+    "Asisten Rumah Tangga", "Pertukangan & Konstruksi", "Edukasi & Akademik",
+    "Catering & Acara", "Perawatan & Layanan Pribadi", "Multimedia",
+    "Seni & Hiburan", "Pertanian & Peternakan"
+  ];
+  final List<String> _tarifOptions = ["Profesional", "Standar", "Ekonomis"];
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi data mock berdasarkan role
-    if (MyApp.isClient) {
-      _nameController = TextEditingController(text: "Lapo Kerja");
-      _emailController = TextEditingController(text: "lapokerja123@gmail.com");
-      _locationController = TextEditingController(text: "Jalan Dr. T. Mansur No.9 Medan Baru");
-    } else {
-      _nameController = TextEditingController(text: "Lala Jola");
-      _emailController = TextEditingController(text: "lalajola123@gmail.com");
-      _locationController = TextEditingController(text: "Medan Tembung");
+    _loadUserData();
+  }
+
+  // --- 1. LOAD DATA ---
+  void _loadUserData() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          UserModel userModel = UserModel.fromMap(doc.data() as Map<String, dynamic>);
+          setState(() {
+            _nameController.text = userModel.name;
+            _emailController.text = userModel.email;
+            _locationController.text = userModel.location ?? "";
+            _photoUrl = userModel.imageUrl; // Ambil URL foto (biasanya dari Google)
+
+            if (userModel.role == 'worker') {
+              _serviceController.text = userModel.serviceCategory ?? "";
+              _tarifController.text = userModel.rateCategory ?? "";
+              _skillsController.text = userModel.skills ?? "";
+              _descController.text = userModel.bio ?? "";
+            }
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal memuat profil: $e")));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Opsi Modal (sama seperti sebelumnya)
-  final List<String> _layananOptions = ["Asisten Rumah Tangga", "Pertukangan & Konstruksi", "Edukasi & Akademik", "Catering & Acara"];
-  final List<String> _tarifOptions = ["Profesional", "Standar", "Ekonomis"];
+  // --- 2. SIMPAN PERUBAHAN (HANYA TEKS) ---
+  void _saveChanges() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nama tidak boleh kosong")));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Siapkan Data Model (Tanpa logika upload foto baru)
+      String role = MyApp.isClient ? 'client' : 'worker';
+
+      UserModel updatedUser = UserModel(
+        uid: user.uid,
+        email: _emailController.text,
+        name: _nameController.text,
+        role: role,
+        location: _locationController.text,
+        imageUrl: _photoUrl, // Tetap gunakan URL lama (Google/Null)
+        
+        serviceCategory: !MyApp.isClient ? _serviceController.text : null,
+        rateCategory: !MyApp.isClient ? _tarifController.text : null,
+        skills: !MyApp.isClient ? _skillsController.text : null,
+        bio: !MyApp.isClient ? _descController.text : null,
+      );
+
+      // Simpan ke Firestore
+      await AuthService().saveUserProfile(updatedUser);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profil berhasil diperbarui!")));
+      Navigator.pop(context); 
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menyimpan: $e")));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading && _nameController.text.isEmpty) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Edit Profil", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
@@ -52,115 +138,83 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Foto Profil Edit
+            // --- BAGIAN FOTO PROFIL (READ ONLY) ---
             Center(
               child: Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
-                    backgroundImage: AssetImage('assets/images/avatar_placeholder.png'), 
-                    backgroundColor: Colors.grey,
+                    backgroundColor: Colors.grey[200],
+                    // Tampilkan foto Google jika ada, jika tidak pakai Placeholder
+                    backgroundImage: (_photoUrl != null && _photoUrl!.isNotEmpty)
+                        ? NetworkImage(_photoUrl!) as ImageProvider
+                        : const AssetImage('assets/images/avatar_placeholder.png'),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, size: 20, color: Colors.black),
-                    ),
-                  ),
+                  // Kita hilangkan ikon kamera karena fitur upload dinonaktifkan
                 ],
               ),
             ),
             const SizedBox(height: 10),
-            const Center(child: Text("Ubah Foto Profil", style: TextStyle(fontWeight: FontWeight.bold))),
+            // Informasi User
+            const Text("Foto Profil (Sesuai Akun Google)", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 30),
 
-            // Field Dasar (Tampil untuk Klien & Pekerja)
-            const InputLabel(label: "Nama Lengkap"),
-            CustomTextField(hintText: "", controller: _nameController),
+            // --- FIELD INPUT ---
+            const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Nama Lengkap")),
+            CustomTextField(hintText: "Nama Anda", controller: _nameController),
             const SizedBox(height: 15),
 
-            const InputLabel(label: "Email"),
-            CustomTextField(hintText: "", controller: _emailController),
+            const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Email")),
+            AbsorbPointer(child: CustomTextField(hintText: "Email Anda", controller: _emailController)),
             const SizedBox(height: 15),
 
-            const InputLabel(label: "Lokasi"),
-            CustomTextField(hintText: "", controller: _locationController),
+            const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Lokasi")),
+            CustomTextField(hintText: "Alamat Lengkap", controller: _locationController),
             const SizedBox(height: 15),
 
-            // --- BAGIAN KHUSUS PEKERJA (Disembunyikan jika Klien) ---
+            // --- KHUSUS PEKERJA ---
             if (!MyApp.isClient) ...[
-              const InputLabel(label: "Layanan"),
+              const Divider(height: 40),
+              const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Layanan")),
               GestureDetector(
-                onTap: () => _showSelectionModal(context, "Ubah Layanan", _layananOptions, _layananController),
-                child: AbsorbPointer(child: CustomTextField(hintText: "", controller: _layananController)),
+                onTap: () => _showSelectionModal(context, "Ubah Layanan", _layananOptions, _serviceController),
+                child: AbsorbPointer(child: CustomTextField(hintText: "Pilih Layanan", controller: _serviceController)),
               ),
               const SizedBox(height: 15),
 
-              const InputLabel(label: "Spesialis"),
-              const CustomTextField(hintText: "Pengasuh Anak, Perawat Lansia"),
-              const SizedBox(height: 15),
-
-              const InputLabel(label: "Tarif"),
+              const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Tarif")),
               GestureDetector(
                 onTap: () => _showSelectionModal(context, "Ubah Tarif", _tarifOptions, _tarifController),
-                child: AbsorbPointer(child: CustomTextField(hintText: "", controller: _tarifController)),
+                child: AbsorbPointer(child: CustomTextField(hintText: "Pilih Tarif", controller: _tarifController)),
               ),
               const SizedBox(height: 15),
 
-              const InputLabel(label: "Keahlian"),
-              const CustomTextField(hintText: "Ramah, Disiplin, Berpengalaman"),
+              const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Keahlian")),
+              CustomTextField(hintText: "Contoh: Ramah, Disiplin", controller: _skillsController),
               const SizedBox(height: 25),
 
-              // Area Upload Sampul
-              Container(
-                height: 100, width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.indigo.shade100),
-                ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.drive_folder_upload_outlined, color: kPrimaryColor),
-                    SizedBox(height: 5),
-                    Text("Ganti/Tambahkan\nSampul Anda", textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 25),
-
-              // Deskripsi Area
-              const InputLabel(label: "Deskripsi"),
+              const Align(alignment: Alignment.centerLeft, child: InputLabel(label: "Deskripsi")),
               Container(
                 height: 150,
-                decoration: BoxDecoration(
-                  color: kInputFillColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
+                decoration: BoxDecoration(color: kInputFillColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
                 padding: const EdgeInsets.all(12),
-                child: const TextField(
+                child: TextField(
+                  controller: _descController,
                   maxLines: 10,
-                  decoration: InputDecoration.collapsed(hintText: "Tulis deskripsi diri Anda..."),
-                  style: TextStyle(fontSize: 13, height: 1.5),
+                  decoration: const InputDecoration.collapsed(hintText: "Tulis deskripsi diri Anda..."),
+                  style: const TextStyle(fontSize: 13, height: 1.5),
                 ),
               ),
               const SizedBox(height: 30),
             ],
-            // ---------------------------------------------------------
             
-            // Tombol Aksi
+            // --- TOMBOL AKSI ---
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       side: const BorderSide(color: kPrimaryColor),
@@ -172,13 +226,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(width: 15),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isLoading ? null : _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("Konfirmasi Perubahan", style: TextStyle(color: Colors.white)),
+                    child: _isLoading 
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text("Konfirmasi", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -190,7 +246,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  // Fungsi Modal Bottom Sheet (Tidak ada perubahan)
+  // Helper Modal
   void _showSelectionModal(BuildContext context, String title, List<String> options, TextEditingController controller) {
     showModalBottomSheet(
       context: context,
@@ -202,7 +258,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               padding: const EdgeInsets.all(20), height: 500,
               child: Column(
                 children: [
-                  Container(width: 40, height: 4, color: Colors.grey[300], margin: const EdgeInsets.only(bottom: 20)),
+                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)), margin: const EdgeInsets.only(bottom: 20)),
                   Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 15),
                   Expanded(
@@ -211,7 +267,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       itemBuilder: (context, index) {
                         return RadioListTile<String>(
                           title: Text(options[index]), value: options[index], groupValue: controller.text, activeColor: kPrimaryColor, contentPadding: EdgeInsets.zero,
-                          onChanged: (value) { setModalState(() { controller.text = value!; }); },
+                          onChanged: (value) { 
+                            setModalState(() { controller.text = value!; }); 
+                            setState(() { controller.text = value!; });
+                          },
                         );
                       },
                     ),
@@ -219,7 +278,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   SizedBox(width: double.infinity, child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text("Konfirmasi Perubahan", style: TextStyle(color: Colors.white)))),
+                      child: const Text("Selesai", style: TextStyle(color: Colors.white)))),
                 ],
               ),
             );

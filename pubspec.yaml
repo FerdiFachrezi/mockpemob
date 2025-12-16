@@ -12,10 +12,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # --- TAMBAHKAN BAGIAN INI ---
+  google_sign_in: ^6.2.1
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   intl: ^0.19.0
+  url_launcher: ^6.3.2
   # ----------------------------
 
 dev_dependencies:

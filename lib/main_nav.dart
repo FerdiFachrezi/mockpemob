@@ -3,14 +3,13 @@ import 'components.dart';
 import 'home_page.dart';
 import 'profile_page.dart';
 import 'orders_page.dart'; 
-import 'search_page.dart'; 
+import 'search_page.dart'; // Pastikan search_page.dart ada
 import 'main.dart'; 
 
 class MainNav extends StatefulWidget {
-  // GlobalKey untuk akses navigasi dari halaman lain
+  // GlobalKey ini PENTING agar HomePage bisa memanggil fungsi di sini
   static final GlobalKey<MainNavState> navKey = GlobalKey<MainNavState>();
   
-  // Parameter untuk menentukan tab awal yang dibuka (Default = 0 / Home)
   final int initialIndex; 
 
   const MainNav({super.key, this.initialIndex = 0});
@@ -19,31 +18,28 @@ class MainNav extends StatefulWidget {
   State<MainNav> createState() => MainNavState();
 }
 
+// Perhatikan: Nama class tidak pakai underscore (_) agar bisa diakses dari luar
 class MainNavState extends State<MainNav> {
   late int _selectedIndex;
-  
-  // List halaman dan item navigasi
   late List<Widget> _pages;
   late List<BottomNavigationBarItem> _navItems;
 
   @override
   void initState() {
     super.initState();
-    // Set tab awal sesuai parameter yang dikirim
     _selectedIndex = widget.initialIndex;
     _initializeNavigation();
   }
 
   void _initializeNavigation() {
-    // Cek peran User (Klien atau Pekerja) dari main.dart
+    // Cek peran User (Klien atau Pekerja)
     bool isClient = MyApp.isClient;
 
     if (isClient) {
       // --- NAVIGASI KLIEN (4 Tab) ---
-      // 0: Home, 1: Search, 2: Orders, 3: Profile
       _pages = [
         const HomePage(),
-        const SearchPage(),
+        const SearchPage(), // Index 1: Search
         const OrdersPage(),
         const ProfilePage(),
       ];
@@ -56,7 +52,6 @@ class MainNavState extends State<MainNav> {
       ];
     } else {
       // --- NAVIGASI PEKERJA (3 Tab) ---
-      // 0: Home, 1: Orders (Pekerjaan), 2: Profile
       _pages = [
         const HomePage(),
         const OrdersPage(),
@@ -77,8 +72,8 @@ class MainNavState extends State<MainNav> {
     });
   }
 
-  // Fungsi Helper: Pindah tab secara programatis
-  // Berguna jika ada tombol di Home yang ingin langsung ke tab Pesanan/Profil
+  // --- INI FUNGSI YANG HILANG SEBELUMNYA ---
+  // Fungsi ini dipanggil dari HomePage untuk pindah tab secara otomatis
   void jumpToTab(int index) {
     // Penyesuaian Index jika user adalah PEKERJA (karena jumlah tab beda)
     if (!MyApp.isClient) {
@@ -96,7 +91,7 @@ class MainNavState extends State<MainNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: MainNav.navKey,
+      key: MainNav.navKey, // Hubungkan Key ke Scaffold
       body: _pages[_selectedIndex], 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
