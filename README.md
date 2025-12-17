@@ -157,3 +157,5 @@ Aplikasi ini dikembangkan untuk keperluan pembelajaran dan pengembangan lanjutan
 
 Silakan gunakan dan kembangkan sesuai kebutuhan.
 
+https://drive.google.com/drive/folders/1SUhhpKHSzXORd_etxI4MWwpgGKYL7DpB?usp=sharing
+https://www.figma.com/design/r7Cum7rCThiMS16MDGSjxl/LAPOKERJA?node-id=0-1&t=5GqzWVnGCXKZyO0m-1
